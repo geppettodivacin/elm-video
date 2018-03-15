@@ -22,12 +22,18 @@ main =
 
 type alias Model =
     { currentEvent : Maybe String
+    , state : PlayState
     }
+
+
+type PlayState
+    = Playing
+    | Paused
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( Model Nothing, Cmd.none )
+    ( Model Nothing Paused, Cmd.none )
 
 
 
@@ -36,6 +42,8 @@ init =
 
 type Msg
     = Event String
+    | Play
+    | Pause
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -44,28 +52,20 @@ update msg model =
         Event event ->
             ( { model | currentEvent = Just event }, Cmd.none )
 
+        Play ->
+            ( { model | currentEvent = Just "playing", state = Playing }, Cmd.none )
+
+        Pause ->
+            ( { model | currentEvent = Just "paused", state = Paused }, Cmd.none )
+
 
 
 -- SUBSCRIPTIONS
 
 
-port videoEvents : (Value -> msg) -> Sub msg
-
-
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    let
-        toMsg value =
-            Decode.decodeValue decodeEvent value
-                |> Result.withDefault (Event "error")
-    in
-        videoEvents toMsg
-
-
-decodeEvent : Decode.Decoder Msg
-decodeEvent =
-    Decode.index 0 Decode.string
-        |> Decode.map Event
+    Sub.none
 
 
 
@@ -77,13 +77,13 @@ view model =
     body []
         [ h1 [] [ text "Sample Media Player using HTML5's Media API" ]
         , div [ id "media-player" ]
-            [ video [ id "media-video", autoplay True ]
+            [ video ([ id "media-video", autoplay True ] ++ videoEvents)
                 [ source [ src "videos/big-buck-bunny_trailer.webm", type_ "video/mp4" ] []
                 ]
             , div [ id "media-controls" ]
                 [ progress [ id "progress-bar", Attr.min "0", Attr.max "100", value "0" ] [ text "played" ]
                 , button [ id "replay-button", class "replay", title "replay" ] [ text "Replay" ]
-                , button [ id "play-pause-button", class "play", title "play" ] [ text "Play" ]
+                , playPauseButton model.state
                 , button [ id "stop-button", class "stop", title "stop" ] [ text "Stop" ]
                 , button [ id "volume-inc-button", class "volume-plus", title "increase volume" ] [ text "Increase Volume" ]
                 , button [ id "volume-dec-button", class "volume-minus", title "decrease volume" ] [ text "Decrease Volume" ]
@@ -94,6 +94,20 @@ view model =
         ]
 
 
+simpleEvent : String -> Attribute Msg
+simpleEvent event =
+    on event (Decode.succeed <| Event event)
+
+
+videoEvents : List (Attribute Msg)
+videoEvents =
+    [ on "playing" (Decode.succeed Play)
+    , simpleEvent "timeupdate"
+    , simpleEvent "ended"
+    , on "pause" (Decode.succeed Pause)
+    ]
+
+
 currentEventView : Maybe String -> Html msg
 currentEventView maybeEvent =
     case maybeEvent of
@@ -102,3 +116,13 @@ currentEventView maybeEvent =
 
         Just event ->
             div [] [ text <| "Current event: " ++ event ]
+
+
+playPauseButton : PlayState -> Html msg
+playPauseButton state =
+    case state of
+        Playing ->
+            button [ id "play-pause-button", class "pause", title "pause" ] [ text "Pause" ]
+
+        Paused ->
+            button [ id "play-pause-button", class "play", title "play" ] [ text "Play" ]

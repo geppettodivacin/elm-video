@@ -8,34 +8,5 @@
   <script src="elm.js"></script>
   <script>
     var app = Elm.Main.fullscreen();
-
-    var video = null;
-
-    function initializeEvents() {
-
-      video = document.getElementById("media-video");
-      console.log("Initialized to " + video);
-
-      var sendToElm = app.ports.videoEvents.send
-
-      video.addEventListener("play", function() {
-        console.log(e);
-        sendToElm(["play"]);
-      });
-      video.addEventListener("pause", function(e) {
-        console.log(e);
-        sendToElm(["pause"]);
-      });
-      video.addEventListener("ended", function(e) {
-        console.log(e);
-        sendToElm(["ended"]);
-      });
-      video.addEventListener("timeupdate", function(e) {
-        console.log(e);
-        sendToElm(["timeupdate"]);
-      });
-    }
-
-    setTimeout(initializeEvents, 500);
   </script>
 </html>
