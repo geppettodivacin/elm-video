@@ -24,7 +24,8 @@ main =
 type alias Model =
     { currentEvent : Maybe String
     , playState : PlayState
-    , volumeState : VolumeState
+    , muteState : MuteState
+    , volume : Float
     , position : Float
     , duration : Float
     }
@@ -40,13 +41,9 @@ type MuteState
     | UnmutedState
 
 
-type alias VolumeState =
-    ( Float, MuteState )
-
-
 init : ( Model, Cmd Msg )
 init =
-    ( Model Nothing PausedState ( 1, UnmutedState ) 0 0, pushVideoEvent Setup )
+    ( Model Nothing PausedState UnmutedState 1 0 0, pushVideoEvent Setup )
 
 
 
@@ -63,7 +60,7 @@ type Msg
     | VolumeUpClicked
     | NowPlaying
     | NowPaused
-    | NowAtVolume VolumeState
+    | NowAtVolume Float MuteState
     | NowAtPosition Float
     | NowHasDuration Float
 
@@ -80,8 +77,8 @@ update msg model =
         NowPaused ->
             ( { model | currentEvent = Just "paused", playState = PausedState }, Cmd.none )
 
-        NowAtVolume state ->
-            ( { model | currentEvent = Just "volumechange", volumeState = state }, Cmd.none )
+        NowAtVolume volume muteState ->
+            ( { model | currentEvent = Just "volumechange", volume = volume, muteState = muteState }, Cmd.none )
 
         NowAtPosition position ->
             ( { model | currentEvent = Just "timeupdate", position = position }, Cmd.none )
@@ -192,7 +189,7 @@ view model =
                 , button [ id "stop-button", class "stop", title "stop" ] [ text "Stop" ]
                 , button [ id "volume-inc-button", class "volume-plus", title "increase volume", onClick VolumeUpClicked ] [ text "Increase Volume" ]
                 , button [ id "volume-dec-button", class "volume-minus", title "decrease volume", onClick VolumeDownClicked ] [ text "Decrease Volume" ]
-                , muteButton model.volumeState
+                , muteButton model.muteState
                 ]
             ]
         , currentEventView model.currentEvent
@@ -219,8 +216,8 @@ playPauseButton state =
             button [ id "play-pause-button", class "play", title "play", onClick PlayClicked ] [ text "Play" ]
 
 
-muteButton : VolumeState -> Html Msg
-muteButton ( _, state ) =
+muteButton : MuteState -> Html Msg
+muteButton state =
     case state of
         MutedState ->
             button [ id "mute-unmute-button", class "unmute", title "unmute", onClick UnmuteClicked ] [ text "Unmute" ]
@@ -258,9 +255,9 @@ decodeVolume =
                 UnmutedState
     in
         Decode.field "target" <|
-            Decode.map2 (\volume muted -> NowAtVolume ( volume, toMuteState muted ))
+            Decode.map2 NowAtVolume
                 (Decode.field "volume" Decode.float)
-                (Decode.field "muted" Decode.bool)
+                (Decode.map toMuteState <| Decode.field "muted" Decode.bool)
 
 
 decodePosition : Decode.Decoder Msg
