@@ -76,6 +76,7 @@ type Msg
     = PlayClicked
     | PauseClicked
     | StopClicked
+    | RestartClicked
     | MuteClicked
     | UnmuteClicked
     | VolumeDownClicked
@@ -122,6 +123,10 @@ update msg model =
             model
                 => pushVideoEvent Stop
 
+        RestartClicked ->
+            model
+                => pushVideoEvent Restart
+
         MuteClicked ->
             model
                 => pushVideoEvent Mute
@@ -160,6 +165,7 @@ type VideoEvent
     | Play
     | Pause
     | Stop
+    | Restart
     | Mute
     | Unmute
     | VolumeDown
@@ -195,6 +201,14 @@ encodeVideoEvent event =
             Encode.object
                 [ "kind" => Encode.string "pause" ]
 
+        Stop ->
+            Encode.object
+                [ "kind" => Encode.string "stop" ]
+
+        Restart ->
+            Encode.object
+                [ "kind" => Encode.string "restart" ]
+
         Mute ->
             Encode.object
                 [ "kind" => Encode.string "mute" ]
@@ -210,10 +224,6 @@ encodeVideoEvent event =
         VolumeUp ->
             Encode.object
                 [ "kind" => Encode.string "volumeup" ]
-
-        Stop ->
-            Encode.object
-                [ "kind" => Encode.string "stop" ]
 
 
 
@@ -246,7 +256,7 @@ view model =
                 ]
             , div [ id "media-controls" ]
                 [ progress [ id "progress-bar", Attr.min "0", Attr.max (toString model.duration), value (toString model.position) ] [ text "played" ]
-                , button [ id "replay-button", class "replay", title "replay" ] [ text "Replay" ]
+                , button [ id "replay-button", class "replay", title "replay", onClick RestartClicked ] [ text "Replay" ]
                 , playPauseButton model.playState
                 , button [ id "stop-button", class "stop", title "stop", onClick StopClicked ] [ text "Stop" ]
                 , button [ id "volume-inc-button", class "volume-plus", title "increase volume", onClick VolumeUpClicked ] [ text "Increase Volume" ]

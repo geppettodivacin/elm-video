@@ -29,6 +29,11 @@
             video.pause();
             video.currentTime = 0;
             console.log("Stopping");
+            break;
+          case "restart":
+            video.currentTime = 0;
+            console.log("Restarting");
+            break;
           case "volumedown":
             var newVolume = Math.max(video.volume - 0.1, 0.0).toFixed(1);
             video.volume = newVolume;
