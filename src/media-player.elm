@@ -199,49 +199,6 @@ view model =
         ]
 
 
-simpleEvent : String -> Attribute Msg
-simpleEvent event =
-    on event (Decode.succeed <| Event event)
-
-
-videoEvents : List (Attribute Msg)
-videoEvents =
-    [ on "playing" (Decode.succeed NowPlaying)
-    , on "timeupdate" decodePosition
-    , simpleEvent "ended"
-    , on "durationchange" decodeDuration
-    , on "volumechange" decodeVolume
-    , on "pause" (Decode.succeed NowPaused)
-    ]
-
-
-decodeVolume : Decode.Decoder Msg
-decodeVolume =
-    let
-        toMuteState muted =
-            if muted then
-                MutedState
-            else
-                UnmutedState
-    in
-        Decode.field "target" <|
-            Decode.map2 (\volume muted -> NowAtVolume ( volume, toMuteState muted ))
-                (Decode.field "volume" Decode.float)
-                (Decode.field "muted" Decode.bool)
-
-
-decodePosition : Decode.Decoder Msg
-decodePosition =
-    Decode.map NowAtPosition
-        (Decode.at [ "target", "currentTime" ] Decode.float)
-
-
-decodeDuration : Decode.Decoder Msg
-decodeDuration =
-    Decode.map NowHasDuration
-        (Decode.at [ "target", "duration" ] Decode.float)
-
-
 currentEventView : Maybe String -> Html msg
 currentEventView maybeEvent =
     case maybeEvent of
@@ -270,6 +227,52 @@ muteButton ( _, state ) =
 
         UnmutedState ->
             button [ id "mute-unmute-button", class "mute", title "mute", onClick MuteClicked ] [ text "Mute" ]
+
+
+
+-- EVENTS
+
+
+videoEvents : List (Attribute Msg)
+videoEvents =
+    [ on "playing" (Decode.succeed NowPlaying)
+    , on "pause" (Decode.succeed NowPaused)
+    , on "durationchange" decodeDuration
+    , on "timeupdate" decodePosition
+    , on "volumechange" decodeVolume
+    ]
+
+
+simpleEvent : String -> Attribute Msg
+simpleEvent event =
+    on event (Decode.succeed <| Event event)
+
+
+decodeVolume : Decode.Decoder Msg
+decodeVolume =
+    let
+        toMuteState muted =
+            if muted then
+                MutedState
+            else
+                UnmutedState
+    in
+        Decode.field "target" <|
+            Decode.map2 (\volume muted -> NowAtVolume ( volume, toMuteState muted ))
+                (Decode.field "volume" Decode.float)
+                (Decode.field "muted" Decode.bool)
+
+
+decodePosition : Decode.Decoder Msg
+decodePosition =
+    Decode.map NowAtPosition
+        (Decode.at [ "target", "currentTime" ] Decode.float)
+
+
+decodeDuration : Decode.Decoder Msg
+decodeDuration =
+    Decode.map NowHasDuration
+        (Decode.at [ "target", "duration" ] Decode.float)
 
 
 
