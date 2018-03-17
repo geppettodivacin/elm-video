@@ -7,6 +7,45 @@
   <div id="main"></div>
   <script src="elm.js"></script>
   <script>
-    var app = Elm.Main.fullscreen();
+    (function() {
+      var app = Elm.Main.fullscreen();
+      var video = null;
+
+      app.ports.videoEventStream.subscribe(function(event) {
+        switch(event.kind) {
+          case "setup":
+            video = document.getElementById("media-video");
+            console.log(video);
+            break;
+          case "pause":
+            console.log("Pausing");
+            video.pause();
+            break;
+          case "play":
+            video.play();
+            console.log("Playing");
+            break;
+          case "volumedown":
+            video.volume = Math.max(video.volume - 0.1, 0.0);
+            console.log("Volume Down, at " + video.volume);
+            break;
+          case "volumeup":
+            video.volume = Math.min(video.volume + 0.1, 1.0);
+            console.log("Volume Up, at " + video.volume);
+            break;
+          case "mute":
+            video.muted = true;
+            console.log("Mute");
+            break;
+          case "unmute":
+            video.muted = false;
+            console.log("Unmute");
+            break;
+          default:
+            console.log("Unexpected event:");
+            console.log(event);
+        }
+      });
+    })();
   </script>
 </html>
