@@ -22,12 +22,12 @@ main =
 
 
 type alias Model =
-    { currentEvent : Maybe String
+    { currentEvent : Maybe String -- This is for debugging which events are handled.
     , playState : PlayState
     , muteState : MuteState
-    , volume : Float
-    , position : Float
-    , duration : Float
+    , volume : Float -- Percentage from 0 - 1
+    , position : Float -- In seconds
+    , duration : Float -- In seconds
     }
 
 
@@ -41,18 +41,39 @@ type MuteState
     | UnmutedState
 
 
+{-| This is the initial state and also the initialization command sent to
+JavaScript to setup the video player.
+-}
 init : ( Model, Cmd Msg )
 init =
-    ( Model Nothing PausedState UnmutedState 1 0 0, pushVideoEvent Setup )
+    { currentEvent = Nothing
+    , playState = PausedState
+    , muteState = UnmutedState
+    , volume = 1
+    , position = 0
+    , duration = 0
+    }
+        => pushVideoEvent Setup
 
 
 
 -- UPDATE
 
 
+{-| These are the kinds of internal messages that can be sent to the update
+function. You'll note that I have used a few naming conventions:
+
+    1. Messages ending in "Clicked" are the user clicking on parts of the
+    interface.
+    2. Messages starting with "Now" are messages received from the video player
+    indicating a change in player state.
+
+Each of these cases must be handled by the update function. Elm will throw a
+compile-time error if you forget, though, so don't worry about it.
+
+-}
 type Msg
-    = Event String
-    | PlayClicked
+    = PlayClicked
     | PauseClicked
     | MuteClicked
     | UnmuteClicked
@@ -68,47 +89,67 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        Event event ->
-            ( { model | currentEvent = Just event }, Cmd.none )
-
         NowPlaying ->
-            ( { model | currentEvent = Just "playing", playState = PlayingState }, Cmd.none )
+            { model | currentEvent = Just "playing", playState = PlayingState }
+                => Cmd.none
 
         NowPaused ->
-            ( { model | currentEvent = Just "paused", playState = PausedState }, Cmd.none )
+            { model | currentEvent = Just "paused", playState = PausedState }
+                => Cmd.none
 
         NowAtVolume volume muteState ->
-            ( { model | currentEvent = Just "volumechange", volume = volume, muteState = muteState }, Cmd.none )
+            { model | currentEvent = Just "volumechange", volume = volume, muteState = muteState }
+                => Cmd.none
 
         NowAtPosition position ->
-            ( { model | currentEvent = Just "timeupdate", position = position }, Cmd.none )
+            { model | currentEvent = Just "timeupdate", position = position }
+                => Cmd.none
 
         NowHasDuration duration ->
-            ( { model | currentEvent = Just "durationchange", duration = duration }, Cmd.none )
+            { model | currentEvent = Just "durationchange", duration = duration }
+                => Cmd.none
 
         PlayClicked ->
-            ( model, pushVideoEvent Play )
+            model
+                => pushVideoEvent Play
 
         PauseClicked ->
-            ( model, pushVideoEvent Pause )
+            model
+                => pushVideoEvent Pause
 
         MuteClicked ->
-            ( model, pushVideoEvent Mute )
+            model
+                => pushVideoEvent Mute
 
         UnmuteClicked ->
-            ( model, pushVideoEvent Unmute )
+            model
+                => pushVideoEvent Unmute
 
         VolumeDownClicked ->
-            ( model, pushVideoEvent VolumeDown )
+            model
+                => pushVideoEvent VolumeDown
 
         VolumeUpClicked ->
-            ( model, pushVideoEvent VolumeUp )
+            model
+                => pushVideoEvent VolumeUp
 
 
 
 -- PORTS
 
 
+{-| This is how we send the video player messages. We are sending out a JSON
+object with the command, where `kind` is always a string with the operation
+name. Different commands may require additional information to be executed.
+These objects should never be constructed by hand but should instead be sent
+via the `pushVideoEvent` function.
+-}
+port videoEventStream : Value -> Cmd msg
+
+
+{-| These are all the kinds of messages that can be sent to the video player.
+Add more cases if we want to tell the video player new things.
+-}
 type VideoEvent
     = Setup
     | Play
@@ -119,9 +160,9 @@ type VideoEvent
     | VolumeUp
 
 
-port videoEventStream : Value -> Cmd msg
-
-
+{-| This is the function we should use to send messages to the video player. It
+takes care of encoding and pushing through the port.
+-}
 pushVideoEvent : VideoEvent -> Cmd msg
 pushVideoEvent event =
     event
@@ -129,6 +170,10 @@ pushVideoEvent event =
         |> videoEventStream
 
 
+{-| Encodes a VideoEvent as a simple JSON value. As new events are added, also
+add a case for the encoder. Elm will throw a compile-time error if you forget,
+so don't worry about forgetting.
+-}
 encodeVideoEvent : VideoEvent -> Value
 encodeVideoEvent event =
     case event of
@@ -174,6 +219,13 @@ subscriptions model =
 -- VIEW
 
 
+{-| The view should look very much like the original HTML, with some notable
+differences. Changeable buttons (play/pause and mute/unmute) are added using
+custom functions, since switching these values out inline based on the model
+would take up a lot of room and would look ugly. You'll also note that the
+value for the progress bar is set directly by the model value instead of to 0,
+and it automatically updates as we change the model.
+-}
 view : Model -> Html Msg
 view model =
     body []
@@ -192,10 +244,13 @@ view model =
                 , muteButton model.muteState
                 ]
             ]
-        , currentEventView model.currentEvent
+        , currentEventView model.currentEvent -- Added for debugging events.
         ]
 
 
+{-| This displays the last event that was handled and exists primarily so that
+I could see real-time what was being handled and what wasn't.
+-}
 currentEventView : Maybe String -> Html msg
 currentEventView maybeEvent =
     case maybeEvent of
@@ -230,6 +285,21 @@ muteButton state =
 -- EVENTS
 
 
+{-| A list of events that the video player may exhibit. We catch these and send
+messages to our update function based on decoding the event object. We use
+decoders here in case the JSON object does not conform to our expectations.
+(Obviously it should, but with JavaScript, you're never sure.)
+
+Note that for "playing" and "pause" events, we don't need to inspect the JSON
+and just produce a message. All we care about here is that the event was fired.
+
+For the others, we extract some information from the target of the video player
+event, which is always the video media player object. This is used to update
+our model. Note that this is because we can never have a direct, mutable
+reference to the video, since then the runtime wouldn't know when the model is
+actually updated.
+
+-}
 videoEvents : List (Attribute Msg)
 videoEvents =
     [ on "playing" (Decode.succeed NowPlaying)
@@ -240,14 +310,11 @@ videoEvents =
     ]
 
 
-simpleEvent : String -> Attribute Msg
-simpleEvent event =
-    on event (Decode.succeed <| Event event)
-
-
 decodeVolume : Decode.Decoder Msg
 decodeVolume =
     let
+        -- This converts the boolean `muted` field of the media player to our
+        -- more meaningful custom data type.
         toMuteState muted =
             if muted then
                 MutedState
@@ -276,6 +343,21 @@ decodeDuration =
 -- UTILITIES
 
 
+{-| This is just a useful alias for making tuples in places where commas have a
+different meaning. It's super useful in lists for this reason.
+
+As an example:
+
+    [ ( "Steelers", 27 ), ( "Ravens", 0 ) ]
+
+could be written:
+
+    [ "Steelers" => 27, "Ravens" => 0 ]
+
+This is often easier to read because you don't have to keep track of so many
+commas and parentheses.
+
+-}
 infixl 0 =>
 (=>) : a -> b -> ( a, b )
 (=>) =
