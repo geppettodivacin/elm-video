@@ -18,13 +18,17 @@
             console.log(video);
             break;
           case "pause":
-            console.log("Pausing");
             video.pause();
+            console.log("Pausing");
             break;
           case "play":
             video.play();
             console.log("Playing");
             break;
+          case "stop":
+            video.pause();
+            video.currentTime = 0;
+            console.log("Stopping");
           case "volumedown":
             var newVolume = Math.max(video.volume - 0.1, 0.0).toFixed(1);
             video.volume = newVolume;

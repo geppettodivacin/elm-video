@@ -75,6 +75,7 @@ compile-time error if you forget, though, so don't worry about it.
 type Msg
     = PlayClicked
     | PauseClicked
+    | StopClicked
     | MuteClicked
     | UnmuteClicked
     | VolumeDownClicked
@@ -117,6 +118,10 @@ update msg model =
             model
                 => pushVideoEvent Pause
 
+        StopClicked ->
+            model
+                => pushVideoEvent Stop
+
         MuteClicked ->
             model
                 => pushVideoEvent Mute
@@ -154,6 +159,7 @@ type VideoEvent
     = Setup
     | Play
     | Pause
+    | Stop
     | Mute
     | Unmute
     | VolumeDown
@@ -205,6 +211,10 @@ encodeVideoEvent event =
             Encode.object
                 [ "kind" => Encode.string "volumeup" ]
 
+        Stop ->
+            Encode.object
+                [ "kind" => Encode.string "stop" ]
+
 
 
 -- SUBSCRIPTIONS
@@ -238,7 +248,7 @@ view model =
                 [ progress [ id "progress-bar", Attr.min "0", Attr.max (toString model.duration), value (toString model.position) ] [ text "played" ]
                 , button [ id "replay-button", class "replay", title "replay" ] [ text "Replay" ]
                 , playPauseButton model.playState
-                , button [ id "stop-button", class "stop", title "stop" ] [ text "Stop" ]
+                , button [ id "stop-button", class "stop", title "stop", onClick StopClicked ] [ text "Stop" ]
                 , button [ id "volume-inc-button", class "volume-plus", title "increase volume", onClick VolumeUpClicked ] [ text "Increase Volume" ]
                 , button [ id "volume-dec-button", class "volume-minus", title "decrease volume", onClick VolumeDownClicked ] [ text "Decrease Volume" ]
                 , muteButton model.muteState
