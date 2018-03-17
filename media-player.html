@@ -26,11 +26,13 @@
             console.log("Playing");
             break;
           case "volumedown":
-            video.volume = Math.max(video.volume - 0.1, 0.0);
+            var newVolume = Math.max(video.volume - 0.1, 0.0).toFixed(1);
+            video.volume = newVolume;
             console.log("Volume Down, at " + video.volume);
             break;
           case "volumeup":
-            video.volume = Math.min(video.volume + 0.1, 1.0);
+            var newVolume = Math.min(video.volume + 0.1, 1.0).toFixed(1);
+            video.volume = newVolume;
             console.log("Volume Up, at " + video.volume);
             break;
           case "mute":
