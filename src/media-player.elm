@@ -26,6 +26,7 @@ type alias Model =
     , playState : PlayState
     , volumeState : VolumeState
     , position : Float
+    , duration : Float
     }
 
 
@@ -45,7 +46,7 @@ type alias VolumeState =
 
 init : ( Model, Cmd Msg )
 init =
-    ( Model Nothing PausedState ( 1, UnmutedState ) 0, pushVideoEvent Setup )
+    ( Model Nothing PausedState ( 1, UnmutedState ) 0 0, pushVideoEvent Setup )
 
 
 
@@ -64,6 +65,7 @@ type Msg
     | NowPaused
     | NowAtVolume VolumeState
     | NowAtPosition Float
+    | NowHasDuration Float
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -83,6 +85,9 @@ update msg model =
 
         NowAtPosition position ->
             ( { model | currentEvent = Just "timeupdate", position = position }, Cmd.none )
+
+        NowHasDuration duration ->
+            ( { model | currentEvent = Just "durationchange", duration = duration }, Cmd.none )
 
         PlayClicked ->
             ( model, pushVideoEvent Play )
@@ -181,7 +186,7 @@ view model =
                 [ source [ src "videos/big-buck-bunny_trailer.webm", type_ "video/mp4" ] []
                 ]
             , div [ id "media-controls" ]
-                [ progress [ id "progress-bar", Attr.min "0", Attr.max "100", value (toString model.position) ] [ text "played" ]
+                [ progress [ id "progress-bar", Attr.min "0", Attr.max (toString model.duration), value (toString model.position) ] [ text "played" ]
                 , button [ id "replay-button", class "replay", title "replay" ] [ text "Replay" ]
                 , playPauseButton model.playState
                 , button [ id "stop-button", class "stop", title "stop" ] [ text "Stop" ]
@@ -204,6 +209,7 @@ videoEvents =
     [ on "playing" (Decode.succeed NowPlaying)
     , on "timeupdate" decodePosition
     , simpleEvent "ended"
+    , on "durationchange" decodeDuration
     , on "volumechange" decodeVolume
     , on "pause" (Decode.succeed NowPaused)
     ]
@@ -228,6 +234,12 @@ decodePosition : Decode.Decoder Msg
 decodePosition =
     Decode.map NowAtPosition
         (Decode.at [ "target", "currentTime" ] Decode.float)
+
+
+decodeDuration : Decode.Decoder Msg
+decodeDuration =
+    Decode.map NowHasDuration
+        (Decode.at [ "target", "duration" ] Decode.float)
 
 
 currentEventView : Maybe String -> Html msg
