@@ -265,7 +265,7 @@ view model =
         [ h1 [] [ text "Sample Media Player using HTML5's Media API" ]
         , div [ id "media-player" ]
             [ video ([ id "media-video" ] ++ videoEvents)
-                [ source [ src "videos/big-buck-bunny_trailer.webm", type_ "video/mp4" ] []
+                [ source [ src "videos/hls/index.m3u8", type_ "application/vnd.apple.mpegurl" ] []
                 ]
             , div [ id "media-controls" ]
                 [ progress [ id "progress-bar", Attr.max (toString model.duration), value (toString model.position), seekEvent model.duration ] [ text "played" ]

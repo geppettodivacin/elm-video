@@ -6,6 +6,7 @@
   </head>
   <div id="main"></div>
   <script src="elm.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js"></script>
   <script>
     (function() {
       var app = Elm.Main.fullscreen();
@@ -15,6 +16,16 @@
         switch(event.kind) {
           case "setup":
             video = document.getElementById("media-video");
+            if (Hls.isSupported()) {
+              var videoSource = video.querySelector("source[type='application/vnd.apple.mpegurl']");
+
+              video.addEventListener("play", function() {
+                var hls = new Hls({ capLevelToPlayerSize: true });
+                hls.attachMedia(video);
+                hls.loadSource(videoSource.src);
+                video.play();
+              }, {once: true});
+            }
             console.log(video);
             break;
           case "pause":
