@@ -1,6 +1,7 @@
 port module Main exposing (..)
 
 import Debug
+import DOM as Dom
 import Html exposing (..)
 import Html.Events exposing (..)
 import Html.Attributes as Attr exposing (..)
@@ -86,6 +87,7 @@ type Msg
     | NowAtVolume Float MuteState
     | NowAtPosition Float
     | NowHasDuration Float
+    | SeekToClicked Float
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -143,6 +145,10 @@ update msg model =
             model
                 => pushVideoEvent VolumeUp
 
+        SeekToClicked position ->
+            model
+                => pushVideoEvent (SeekTo position)
+
 
 
 -- PORTS
@@ -170,6 +176,7 @@ type VideoEvent
     | Unmute
     | VolumeDown
     | VolumeUp
+    | SeekTo Float
 
 
 {-| This is the function we should use to send messages to the video player. It
@@ -225,6 +232,12 @@ encodeVideoEvent event =
             Encode.object
                 [ "kind" => Encode.string "volumeup" ]
 
+        SeekTo position ->
+            Encode.object
+                [ "kind" => Encode.string "seekto"
+                , "position" => Encode.float position
+                ]
+
 
 
 -- SUBSCRIPTIONS
@@ -255,7 +268,7 @@ view model =
                 [ source [ src "videos/big-buck-bunny_trailer.webm", type_ "video/mp4" ] []
                 ]
             , div [ id "media-controls" ]
-                [ progress [ id "progress-bar", Attr.min "0", Attr.max (toString model.duration), value (toString model.position) ] [ text "played" ]
+                [ progress [ id "progress-bar", Attr.max (toString model.duration), value (toString model.position), seekEvent model.duration ] [ text "played" ]
                 , button [ id "replay-button", class "replay", title "replay", onClick RestartClicked ] [ text "Replay" ]
                 , playPauseButton model.playState
                 , button [ id "stop-button", class "stop", title "stop", onClick StopClicked ] [ text "Stop" ]
@@ -330,6 +343,11 @@ videoEvents =
     ]
 
 
+seekEvent : Float -> Attribute Msg
+seekEvent duration =
+    on "click" (decodeSeek duration)
+
+
 decodeVolume : Decode.Decoder Msg
 decodeVolume =
     let
@@ -341,7 +359,7 @@ decodeVolume =
             else
                 UnmutedState
     in
-        Decode.field "target" <|
+        Dom.target <|
             Decode.map2 NowAtVolume
                 (Decode.field "volume" Decode.float)
                 (Decode.map toMuteState <| Decode.field "muted" Decode.bool)
@@ -349,14 +367,27 @@ decodeVolume =
 
 decodePosition : Decode.Decoder Msg
 decodePosition =
-    Decode.map NowAtPosition
-        (Decode.at [ "target", "currentTime" ] Decode.float)
+    Dom.target <|
+        Decode.map NowAtPosition
+            (Decode.field "currentTime" Decode.float)
 
 
 decodeDuration : Decode.Decoder Msg
 decodeDuration =
-    Decode.map NowHasDuration
-        (Decode.at [ "target", "duration" ] Decode.float)
+    Dom.target <|
+        Decode.map NowHasDuration
+            (Decode.field "duration" Decode.float)
+
+
+decodeSeek : Float -> Decode.Decoder Msg
+decodeSeek duration =
+    let
+        calcSeek width offset =
+            SeekToClicked <| (offset / width) * duration
+    in
+        Decode.map2 calcSeek
+            (Dom.target Dom.offsetWidth)
+            (Decode.field "offsetX" Decode.float)
 
 
 

@@ -52,6 +52,10 @@
             video.muted = false;
             console.log("Unmute");
             break;
+          case "seekto":
+            video.currentTime = event.position;
+            console.log("Seeked to " + event.position);
+            break;
           default:
             console.log("Unexpected event:");
             console.log(event);
