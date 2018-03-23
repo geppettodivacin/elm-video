@@ -1,12 +1,19 @@
 port module Main exposing (..)
 
+import Color
 import Debug
 import DOM as Dom
-import Html exposing (..)
-import Html.Events exposing (..)
-import Html.Attributes as Attr exposing (..)
+import Element exposing (..)
+import Element.Attributes exposing (..)
+import Element.Events exposing (..)
+import Html exposing (Html)
 import Json.Encode as Encode exposing (Value)
 import Json.Decode as Decode
+import Style exposing (Style, StyleSheet)
+import Style.Border as Border
+import Style.Background as Background
+import Style.Font as Font
+import Style.Color as Color
 
 
 main =
@@ -169,60 +176,231 @@ custom functions, since switching these values out inline based on the model
 would take up a lot of room and would look ugly. You'll also note that the
 value for the progress bar is set directly by the model value instead of to 0,
 and it automatically updates as we change the model.
+
+TODO: Fix this comment.
+
 -}
+type Style
+    = Style
+    | BodyStyle
+    | HeaderStyle
+    | PlayerStyle
+    | VideoStyle
+    | ButtonStyle ButtonType
+
+
+type ButtonType
+    = PlayButton
+    | PauseButton
+    | StopButton
+    | VolumePlusButton
+    | VolumeMinusButton
+    | MuteButton
+    | UnmuteButton
+    | ReplayButton
+
+
+stylesheet : StyleSheet Style variation
+stylesheet =
+    let
+        buttonBackgroundPosition buttonType =
+            case buttonType of
+                PlayButton ->
+                    ( 0, 0 )
+
+                PauseButton ->
+                    ( -19, 0 )
+
+                StopButton ->
+                    ( -38, 0 )
+
+                VolumePlusButton ->
+                    ( -57, 0 )
+
+                VolumeMinusButton ->
+                    ( -76, 0 )
+
+                MuteButton ->
+                    ( -95, 0 )
+
+                UnmuteButton ->
+                    ( -114, 0 )
+
+                ReplayButton ->
+                    ( -130, 0 )
+
+        buttonStyle buttonType =
+            Style.style (ButtonStyle buttonType)
+                [ Border.none
+                , Style.cursor "pointer"
+                , Background.imageWith
+                    { src = "images/buttons.png"
+                    , repeat = Background.noRepeat
+                    , size = Background.natural
+                    , position = buttonBackgroundPosition buttonType
+                    }
+                , Style.prop "text-indent" "-99999px"
+                ]
+    in
+        Style.styleSheet
+            [ Style.style Style []
+            , Style.style BodyStyle
+                [ Font.typeface [ Font.font "verdana" ]
+                ]
+            , Style.style HeaderStyle
+                [ Font.size 28
+                , Color.text <| Color.rgb 51 51 51
+                ]
+            , Style.style PlayerStyle
+                [ Color.background <| Color.rgb 51 51 51
+                ]
+            , Style.style VideoStyle
+                [ Border.all 1
+                , Border.solid
+                , Color.border <| Color.rgb 46 82 164
+                , Color.background Color.black
+                ]
+            , buttonStyle PlayButton
+            , buttonStyle PauseButton
+            , buttonStyle StopButton
+            , buttonStyle VolumePlusButton
+            , buttonStyle VolumeMinusButton
+            , buttonStyle MuteButton
+            , buttonStyle UnmuteButton
+            , buttonStyle ReplayButton
+            ]
+
+
 view : Model -> Html Msg
 view model =
-    body []
-        [ h1 [] [ text "Sample Media Player using HTML5's Media API" ]
-        , div [ id "media-player" ]
-            [ video ([ id "media-video" ] ++ videoEvents)
-                [ source [ src "videos/big-buck-bunny_trailer.webm", type_ "video/mp4" ] []
-                ]
-            , div [ id "media-controls" ]
-                [ progress [ id "progress-bar", Attr.max (toString model.duration), value (toString model.position), seekEvent model.duration ] [ text "played" ]
-                , button [ id "replay-button", class "replay", title "replay", onClick RestartClicked ] [ text "Replay" ]
-                , playPauseButton model.playState
-                , button [ id "stop-button", class "stop", title "stop", onClick StopClicked ] [ text "Stop" ]
-                , button [ id "volume-inc-button", class "volume-plus", title "increase volume", onClick VolumeUpClicked ] [ text "Increase Volume" ]
-                , button [ id "volume-dec-button", class "volume-minus", title "decrease volume", onClick VolumeDownClicked ] [ text "Decrease Volume" ]
-                , muteButton model.muteState
-                ]
+    Element.layout stylesheet <|
+        Element.column BodyStyle
+            [ padding 8 ]
+            [ Element.h1 HeaderStyle [ paddingXY 0 10 ] <|
+                Element.text "Sample Media Player using Elm Style Elements"
+            , mediaPlayerView model
+            , currentEventView model.currentEvent
             ]
-        , currentEventView model.currentEvent -- Added for debugging events.
+
+
+mediaPlayerView : Model -> Element Style variation Msg
+mediaPlayerView model =
+    Element.el PlayerStyle
+        [ paddingTop 16
+        , paddingBottom 8
+        , paddingLeft 16
+        , paddingRight 16
+        , alignLeft
         ]
+    <|
+        Element.column PlayerStyle
+            [ spacing 5 ]
+            [ Element.node "video" <|
+                Element.el VideoStyle
+                    ([ width <| px 305
+                     , height <| px 160
+                     , id "media-video"
+                     , attribute "src" "videos/big-buck-bunny_trailer.webm"
+                     ]
+                        ++ videoEvents
+                    )
+                    Element.empty
+            , controlsView model
+            ]
+
+
+controlsView : Model -> Element Style variation Msg
+controlsView model =
+    let
+        maxValue : Float -> Attribute variation Msg
+        maxValue value =
+            attribute "max" <| toString value
+
+        curValue : Float -> Attribute variation Msg
+        curValue value =
+            attribute "value" <| toString value
+    in
+        Element.row Style
+            [ spacing 6 ]
+            [ Element.node "progress" <|
+                Element.el Style
+                    [ maxValue model.duration, curValue model.position ]
+                    Element.empty
+            , buttonView ReplayButton "Replay"
+            , playPauseButtonView model.playState
+            , buttonView StopButton "Stop"
+            , buttonView VolumePlusButton "+"
+            , buttonView VolumeMinusButton "-"
+            , muteButtonView model.muteState
+            ]
+
+
+playPauseButtonView : PlayState -> Element Style variation Msg
+playPauseButtonView state =
+    case state of
+        PlayingState ->
+            buttonView PauseButton "Pause"
+
+        PausedState ->
+            buttonView PlayButton "Play"
+
+
+muteButtonView : MuteState -> Element Style variation Msg
+muteButtonView state =
+    case state of
+        MutedState ->
+            buttonView UnmuteButton "Unmute"
+
+        UnmutedState ->
+            buttonView MuteButton "Mute"
+
+
+buttonView : ButtonType -> String -> Element Style variation Msg
+buttonView buttonType backupText =
+    Element.button (ButtonStyle buttonType)
+        [ width (px 16)
+        , height (px 16)
+        , onClick (buttonMsg buttonType)
+        ]
+    <|
+        Element.text backupText
+
+
+buttonMsg : ButtonType -> Msg
+buttonMsg buttonType =
+    case buttonType of
+        PlayButton ->
+            PlayClicked
+
+        PauseButton ->
+            PauseClicked
+
+        StopButton ->
+            StopClicked
+
+        VolumePlusButton ->
+            VolumeUpClicked
+
+        VolumeMinusButton ->
+            VolumeDownClicked
+
+        MuteButton ->
+            MuteClicked
+
+        UnmuteButton ->
+            UnmuteClicked
+
+        ReplayButton ->
+            RestartClicked
 
 
 {-| This displays the last event that was handled and exists primarily so that
 I could see real-time what was being handled and what wasn't.
 -}
-currentEventView : Maybe String -> Html msg
+currentEventView : Maybe String -> Element style variation msg
 currentEventView maybeEvent =
-    case maybeEvent of
-        Nothing ->
-            div [] []
-
-        Just event ->
-            div [] [ text <| "Current event: " ++ event ]
-
-
-playPauseButton : PlayState -> Html Msg
-playPauseButton state =
-    case state of
-        PlayingState ->
-            button [ id "play-pause-button", class "pause", title "pause", onClick PauseClicked ] [ text "Pause" ]
-
-        PausedState ->
-            button [ id "play-pause-button", class "play", title "play", onClick PlayClicked ] [ text "Play" ]
-
-
-muteButton : MuteState -> Html Msg
-muteButton state =
-    case state of
-        MutedState ->
-            button [ id "mute-unmute-button", class "unmute", title "unmute", onClick UnmuteClicked ] [ text "Unmute" ]
-
-        UnmutedState ->
-            button [ id "mute-unmute-button", class "mute", title "mute", onClick MuteClicked ] [ text "Mute" ]
+    Element.whenJust maybeEvent
+        (\event -> Element.text <| "Current event: " ++ event)
 
 
 
@@ -244,7 +422,7 @@ reference to the video, since then the runtime wouldn't know when the model is
 actually updated.
 
 -}
-videoEvents : List (Attribute Msg)
+videoEvents : List (Attribute variation Msg)
 videoEvents =
     [ on "playing" (Decode.succeed NowPlaying)
     , on "pause" (Decode.succeed NowPaused)
@@ -254,7 +432,7 @@ videoEvents =
     ]
 
 
-seekEvent : Float -> Attribute Msg
+seekEvent : Float -> Attribute variation Msg
 seekEvent duration =
     on "click" (decodeSeek duration)
 

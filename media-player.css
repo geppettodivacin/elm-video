@@ -1,26 +1,4 @@
-
-body { font-family:'verdana'; }
-
-h1 { 
-	font-size:16px;
-	color:#333;
-}
-
-#media-player {
-	float:left;
-	padding:1em 1em .5em;
-	background-color:#333;
-}
-
-video {
-	border:1px solid #2e52a4;
-	width:305px;
-	height:160px;
-	background:#000;
-}
-
 button {
-	text-indent:-9999px;
 	width:16px;
 	height:16px;
 	border:none;
