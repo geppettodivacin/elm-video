@@ -179,10 +179,10 @@ the generated HTML is a lot busier than using the standard `Html` library).
 view : Model -> Html Msg
 view model =
     Element.layout stylesheet <|
-        Element.column BodyStyle
+        column BodyStyle
             [ padding 8 ]
-            [ Element.h1 HeaderStyle [ paddingXY 0 10 ] <|
-                Element.text "Sample Media Player using Elm Style Elements"
+            [ h1 HeaderStyle [ paddingXY 0 10 ] <|
+                text "Sample Media Player using Elm Style Elements"
             , mediaPlayerView model
             , currentEventView model.currentEvent
             ]
@@ -190,7 +190,7 @@ view model =
 
 mediaPlayerView : Model -> Element Class variation Msg
 mediaPlayerView model =
-    Element.el PlayerStyle
+    el PlayerStyle
         [ paddingTop 16
         , paddingBottom 8
         , paddingLeft 16
@@ -198,10 +198,10 @@ mediaPlayerView model =
         , alignLeft
         ]
     <|
-        Element.column PlayerStyle
+        column PlayerStyle
             [ spacing 5 ]
-            [ Element.node "video" <|
-                Element.el VideoStyle
+            [ node "video" <|
+                el VideoStyle
                     ([ width <| px 305
                      , height <| px 160
                      , id "media-video"
@@ -209,7 +209,7 @@ mediaPlayerView model =
                      ]
                         ++ videoEvents
                     )
-                    Element.empty
+                    empty
             , controlsView model
             ]
 
@@ -225,12 +225,12 @@ controlsView model =
         curValue value =
             attribute "value" <| toString value
     in
-        Element.row DefaultStyle
+        row DefaultStyle
             [ spacing 6 ]
             [ node "progress" <|
-                Element.el DefaultStyle
+                el DefaultStyle
                     [ maxValue model.duration, curValue model.position ]
-                    Element.empty
+                    empty
             , buttonView ReplayButton "Replay"
             , playPauseButtonView model.playState
             , buttonView StopButton "Stop"
@@ -262,13 +262,13 @@ muteButtonView state =
 
 buttonView : ButtonType -> String -> Element Class variation Msg
 buttonView buttonType backupText =
-    Element.button (ButtonStyle buttonType)
+    button (ButtonStyle buttonType)
         [ width (px 16)
         , height (px 16)
         , onClick (buttonMsg buttonType)
         ]
     <|
-        Element.text backupText
+        text backupText
 
 
 buttonMsg : ButtonType -> Msg
@@ -305,7 +305,7 @@ I could see real-time what was being handled and what wasn't.
 currentEventView : Maybe String -> Element style variation msg
 currentEventView maybeEvent =
     Element.whenJust maybeEvent
-        (\event -> Element.text <| "Current event: " ++ event)
+        (\event -> text <| "Current event: " ++ event)
 
 
 
