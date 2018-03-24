@@ -61,6 +61,7 @@ stylesheet =
             Style.style (ButtonStyle buttonType)
                 [ Border.none
                 , Style.cursor "pointer"
+                , Color.background transparent
                 , Background.imageWith
                     { src = "images/buttons.png"
                     , repeat = Background.noRepeat
@@ -97,3 +98,8 @@ stylesheet =
             , buttonStyle UnmuteButton
             , buttonStyle ReplayButton
             ]
+
+
+transparent : Color.Color
+transparent =
+    Color.rgba 0 0 0 0
