@@ -8,8 +8,12 @@ import Style.Font as Font
 import Style.Color as Color
 
 
+{-| These are the different classes that any element can have. They're
+statically checked at compile time, and it is impossible to have an element
+without a class.
+-}
 type Class
-    = Style
+    = DefaultStyle
     | BodyStyle
     | HeaderStyle
     | PlayerStyle
@@ -17,6 +21,11 @@ type Class
     | ButtonStyle ButtonType
 
 
+{-| Because there are many buttons, but they are all styled similarly, we let
+ButtonStyle take a second argument for what kind of button it is. This way, the
+buttons can be easily grouped together, and the compiler can ensure that we
+have not missed any cases (see `buttonStyle` below).
+-}
 type ButtonType
     = PlayButton
     | PauseButton
@@ -28,6 +37,10 @@ type ButtonType
     | ReplayButton
 
 
+{-| This is analogous to a CSS file: it stores all of the style information for
+all of the elements. Note that specific size information and positioning
+information is left to the view function in our main file.
+-}
 stylesheet : StyleSheet Class variation
 stylesheet =
     Style.styleSheet
@@ -59,6 +72,18 @@ stylesheet =
         ]
 
 
+{-| Buttons are all styled very similarly, so we use a function to construct
+the style for each button type. Note that with CSS, this would be done through
+inheritance, but there is no inheritance here.
+
+Note also that, if we didn't have the extra `ButtonType` type on buttons, but
+instead used lots of individual `Class` values, the compiler would expect us to
+have background positions for every class, even ones that we'd never call
+`buttonStyle` on. We'd be forced to have a default case, which would be
+unhelpful and would eliminate Elm's static check that we have covered each
+case.
+
+-}
 buttonStyle : ButtonType -> Style Class variation
 buttonStyle buttonType =
     let
