@@ -178,14 +178,18 @@ the generated HTML is a lot busier than using the standard `Html` library).
 -}
 view : Model -> Html Msg
 view model =
-    Element.layout stylesheet <|
-        column BodyStyle
-            [ padding 8 ]
-            [ h1 HeaderStyle [ paddingXY 0 10 ] <|
-                text "Sample Media Player using Elm Style Elements"
-            , mediaPlayerView model
-            , currentEventView model.currentEvent
-            ]
+    Element.layout stylesheet <| viewMain model
+
+
+viewMain : Model -> Element Class variation Msg
+viewMain model =
+    column BodyStyle
+        [ padding 8 ]
+        [ h1 HeaderStyle [ paddingXY 0 10 ] <|
+            text "Sample Media Player using Elm Style Elements"
+        , mediaPlayerView model
+        , currentEventView model.currentEvent
+        ]
 
 
 mediaPlayerView : Model -> Element Class variation Msg
@@ -200,18 +204,26 @@ mediaPlayerView model =
     <|
         column PlayerStyle
             [ spacing 5 ]
-            [ node "video" <|
-                el VideoStyle
-                    ([ width <| px 305
-                     , height <| px 160
-                     , id "media-video"
-                     , attribute "src" "videos/big-buck-bunny_trailer.webm"
-                     ]
-                        ++ videoEvents
-                    )
-                    empty
+            [ videoView
             , controlsView model
             ]
+
+
+videoView : Element Class variation Msg
+videoView =
+    let
+        attributes =
+            List.concat
+                [ [ width <| px 305
+                  , height <| px 160
+                  , id "media-video"
+                  , attribute "src" "videos/big-buck-bunny_trailer.webm"
+                  ]
+                , videoEvents
+                ]
+    in
+        node "video" <|
+            el VideoStyle attributes empty
 
 
 controlsView : Model -> Element Class variation Msg
