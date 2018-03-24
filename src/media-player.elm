@@ -151,95 +151,6 @@ update msg model =
 
 
 
--- PORTS
-
-
-{-| This is how we send the video player messages. We are sending out a JSON
-object with the command, where `kind` is always a string with the operation
-name. Different commands may require additional information to be executed.
-These objects should never be constructed by hand but should instead be sent
-via the `pushVideoEvent` function.
--}
-port videoEventStream : Value -> Cmd msg
-
-
-{-| These are all the kinds of messages that can be sent to the video player.
-Add more cases if we want to tell the video player new things.
--}
-type VideoEvent
-    = Setup
-    | Play
-    | Pause
-    | Stop
-    | Restart
-    | Mute
-    | Unmute
-    | VolumeDown
-    | VolumeUp
-    | SeekTo Float
-
-
-{-| This is the function we should use to send messages to the video player. It
-takes care of encoding and pushing through the port.
--}
-pushVideoEvent : VideoEvent -> Cmd msg
-pushVideoEvent event =
-    event
-        |> encodeVideoEvent
-        |> videoEventStream
-
-
-{-| Encodes a VideoEvent as a simple JSON value. As new events are added, also
-add a case for the encoder. Elm will throw a compile-time error if you forget,
-so don't worry about forgetting.
--}
-encodeVideoEvent : VideoEvent -> Value
-encodeVideoEvent event =
-    case event of
-        Setup ->
-            Encode.object
-                [ "kind" => Encode.string "setup" ]
-
-        Play ->
-            Encode.object
-                [ "kind" => Encode.string "play" ]
-
-        Pause ->
-            Encode.object
-                [ "kind" => Encode.string "pause" ]
-
-        Stop ->
-            Encode.object
-                [ "kind" => Encode.string "stop" ]
-
-        Restart ->
-            Encode.object
-                [ "kind" => Encode.string "restart" ]
-
-        Mute ->
-            Encode.object
-                [ "kind" => Encode.string "mute" ]
-
-        Unmute ->
-            Encode.object
-                [ "kind" => Encode.string "unmute" ]
-
-        VolumeDown ->
-            Encode.object
-                [ "kind" => Encode.string "volumedown" ]
-
-        VolumeUp ->
-            Encode.object
-                [ "kind" => Encode.string "volumeup" ]
-
-        SeekTo position ->
-            Encode.object
-                [ "kind" => Encode.string "seekto"
-                , "position" => Encode.float position
-                ]
-
-
-
 -- SUBSCRIPTIONS
 
 
@@ -388,6 +299,95 @@ decodeSeek duration =
         Decode.map2 calcSeek
             (Dom.target Dom.offsetWidth)
             (Decode.field "offsetX" Decode.float)
+
+
+
+-- PORTS
+
+
+{-| This is how we send the video player messages. We are sending out a JSON
+object with the command, where `kind` is always a string with the operation
+name. Different commands may require additional information to be executed.
+These objects should never be constructed by hand but should instead be sent
+via the `pushVideoEvent` function.
+-}
+port videoEventStream : Value -> Cmd msg
+
+
+{-| These are all the kinds of messages that can be sent to the video player.
+Add more cases if we want to tell the video player new things.
+-}
+type VideoEvent
+    = Setup
+    | Play
+    | Pause
+    | Stop
+    | Restart
+    | Mute
+    | Unmute
+    | VolumeDown
+    | VolumeUp
+    | SeekTo Float
+
+
+{-| This is the function we should use to send messages to the video player. It
+takes care of encoding and pushing through the port.
+-}
+pushVideoEvent : VideoEvent -> Cmd msg
+pushVideoEvent event =
+    event
+        |> encodeVideoEvent
+        |> videoEventStream
+
+
+{-| Encodes a VideoEvent as a simple JSON value. As new events are added, also
+add a case for the encoder. Elm will throw a compile-time error if you forget,
+so don't worry about forgetting.
+-}
+encodeVideoEvent : VideoEvent -> Value
+encodeVideoEvent event =
+    case event of
+        Setup ->
+            Encode.object
+                [ "kind" => Encode.string "setup" ]
+
+        Play ->
+            Encode.object
+                [ "kind" => Encode.string "play" ]
+
+        Pause ->
+            Encode.object
+                [ "kind" => Encode.string "pause" ]
+
+        Stop ->
+            Encode.object
+                [ "kind" => Encode.string "stop" ]
+
+        Restart ->
+            Encode.object
+                [ "kind" => Encode.string "restart" ]
+
+        Mute ->
+            Encode.object
+                [ "kind" => Encode.string "mute" ]
+
+        Unmute ->
+            Encode.object
+                [ "kind" => Encode.string "unmute" ]
+
+        VolumeDown ->
+            Encode.object
+                [ "kind" => Encode.string "volumedown" ]
+
+        VolumeUp ->
+            Encode.object
+                [ "kind" => Encode.string "volumeup" ]
+
+        SeekTo position ->
+            Encode.object
+                [ "kind" => Encode.string "seekto"
+                , "position" => Encode.float position
+                ]
 
 
 
