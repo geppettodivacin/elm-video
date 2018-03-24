@@ -229,7 +229,10 @@ controlsView model =
             [ spacing 6 ]
             [ node "progress" <|
                 el DefaultStyle
-                    [ maxValue model.duration, curValue model.position ]
+                    [ maxValue model.duration
+                    , curValue model.position
+                    , seekEvent model.duration
+                    ]
                     empty
             , buttonView ReplayButton "Replay"
             , playPauseButtonView model.playState
