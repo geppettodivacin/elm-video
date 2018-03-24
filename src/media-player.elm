@@ -165,15 +165,16 @@ subscriptions model =
 -- VIEW
 
 
-{-| The view should look very much like the original HTML, with some notable
-differences. Changeable buttons (play/pause and mute/unmute) are added using
-custom functions, since switching these values out inline based on the model
-would take up a lot of room and would look ugly. You'll also note that the
-value for the progress bar is set directly by the model value instead of to 0,
-and it automatically updates as we change the model.
-
-TODO: Fix this comment.
-
+{-| This performs the same function that HTML normally would. It defines what
+the user will see on the page. The style elements package allows us to specify
+the layout here in the view rather than in the CSS (or even in the stylesheet
+in our custom StyleSheet module, which I factored out just to save space). As a
+result, there is a lot more information in the view than would normally go in
+HTML, such as padding, spacing, and sizes. Advantages here is that we can
+change sizes and positions directly based on the model's values, and we only
+have a single place to change any of our layout. The primary disadvantage is a
+little more visual clutter here, and possibly some slowdown in rendering (since
+the generated HTML is a lot busier than using the standard `Html` library).
 -}
 view : Model -> Html Msg
 view model =
