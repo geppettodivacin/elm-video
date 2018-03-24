@@ -1,14 +1,14 @@
-module StyleSheet exposing (Style(..), ButtonType(..), stylesheet)
+module StyleSheet exposing (Class(..), ButtonType(..), stylesheet)
 
 import Color
-import Style exposing (StyleSheet)
+import Style exposing (Style, StyleSheet)
 import Style.Border as Border
 import Style.Background as Background
 import Style.Font as Font
 import Style.Color as Color
 
 
-type Style
+type Class
     = Style
     | BodyStyle
     | HeaderStyle
@@ -28,8 +28,39 @@ type ButtonType
     | ReplayButton
 
 
-stylesheet : StyleSheet Style variation
+stylesheet : StyleSheet Class variation
 stylesheet =
+    Style.styleSheet
+        [ Style.style DefaultStyle []
+        , Style.style BodyStyle
+            [ Font.typeface [ Font.font "verdana" ]
+            ]
+        , Style.style HeaderStyle
+            [ Font.size 28
+            , Color.text <| Color.rgb 51 51 51
+            ]
+        , Style.style PlayerStyle
+            [ Color.background <| Color.rgb 51 51 51
+            ]
+        , Style.style VideoStyle
+            [ Border.all 1
+            , Border.solid
+            , Color.border <| Color.rgb 46 82 164
+            , Color.background Color.black
+            ]
+        , buttonStyle PlayButton
+        , buttonStyle PauseButton
+        , buttonStyle StopButton
+        , buttonStyle VolumePlusButton
+        , buttonStyle VolumeMinusButton
+        , buttonStyle MuteButton
+        , buttonStyle UnmuteButton
+        , buttonStyle ReplayButton
+        ]
+
+
+buttonStyle : ButtonType -> Style Class variation
+buttonStyle buttonType =
     let
         buttonBackgroundPosition buttonType =
             case buttonType of
@@ -56,47 +87,18 @@ stylesheet =
 
                 ReplayButton ->
                     ( -130, 0 )
-
-        buttonStyle buttonType =
-            Style.style (ButtonStyle buttonType)
-                [ Border.none
-                , Style.cursor "pointer"
-                , Color.background transparent
-                , Background.imageWith
-                    { src = "images/buttons.png"
-                    , repeat = Background.noRepeat
-                    , size = Background.natural
-                    , position = buttonBackgroundPosition buttonType
-                    }
-                , Style.prop "text-indent" "-99999px"
-                ]
     in
-        Style.styleSheet
-            [ Style.style Style []
-            , Style.style BodyStyle
-                [ Font.typeface [ Font.font "verdana" ]
-                ]
-            , Style.style HeaderStyle
-                [ Font.size 28
-                , Color.text <| Color.rgb 51 51 51
-                ]
-            , Style.style PlayerStyle
-                [ Color.background <| Color.rgb 51 51 51
-                ]
-            , Style.style VideoStyle
-                [ Border.all 1
-                , Border.solid
-                , Color.border <| Color.rgb 46 82 164
-                , Color.background Color.black
-                ]
-            , buttonStyle PlayButton
-            , buttonStyle PauseButton
-            , buttonStyle StopButton
-            , buttonStyle VolumePlusButton
-            , buttonStyle VolumeMinusButton
-            , buttonStyle MuteButton
-            , buttonStyle UnmuteButton
-            , buttonStyle ReplayButton
+        Style.style (ButtonStyle buttonType)
+            [ Border.none
+            , Style.cursor "pointer"
+            , Color.background transparent
+            , Background.imageWith
+                { src = "images/buttons.png"
+                , repeat = Background.noRepeat
+                , size = Background.natural
+                , position = buttonBackgroundPosition buttonType
+                }
+            , Style.prop "text-indent" "-99999px"
             ]
 
 

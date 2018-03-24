@@ -188,7 +188,7 @@ view model =
             ]
 
 
-mediaPlayerView : Model -> Element Style variation Msg
+mediaPlayerView : Model -> Element Class variation Msg
 mediaPlayerView model =
     Element.el PlayerStyle
         [ paddingTop 16
@@ -214,7 +214,7 @@ mediaPlayerView model =
             ]
 
 
-controlsView : Model -> Element Style variation Msg
+controlsView : Model -> Element Class variation Msg
 controlsView model =
     let
         maxValue : Float -> Attribute variation Msg
@@ -225,10 +225,10 @@ controlsView model =
         curValue value =
             attribute "value" <| toString value
     in
-        Element.row Style
+        Element.row DefaultStyle
             [ spacing 6 ]
-            [ Element.node "progress" <|
-                Element.el Style
+            [ node "progress" <|
+                Element.el DefaultStyle
                     [ maxValue model.duration, curValue model.position ]
                     Element.empty
             , buttonView ReplayButton "Replay"
@@ -240,7 +240,7 @@ controlsView model =
             ]
 
 
-playPauseButtonView : PlayState -> Element Style variation Msg
+playPauseButtonView : PlayState -> Element Class variation Msg
 playPauseButtonView state =
     case state of
         PlayingState ->
@@ -250,7 +250,7 @@ playPauseButtonView state =
             buttonView PlayButton "Play"
 
 
-muteButtonView : MuteState -> Element Style variation Msg
+muteButtonView : MuteState -> Element Class variation Msg
 muteButtonView state =
     case state of
         MutedState ->
@@ -260,7 +260,7 @@ muteButtonView state =
             buttonView MuteButton "Mute"
 
 
-buttonView : ButtonType -> String -> Element Style variation Msg
+buttonView : ButtonType -> String -> Element Class variation Msg
 buttonView buttonType backupText =
     Element.button (ButtonStyle buttonType)
         [ width (px 16)
