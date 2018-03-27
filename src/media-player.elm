@@ -31,6 +31,8 @@ type alias Model =
     , volume : Float -- Percentage from 0 - 1
     , position : Float -- In seconds
     , duration : Float -- In seconds
+    , useFake : Bool
+    , w : Int
     }
 
 
@@ -55,6 +57,8 @@ init =
     , volume = 1
     , position = 0
     , duration = 0
+    , useFake = False
+    , w = 0
     }
         => pushVideoEvent Setup
 
@@ -90,6 +94,7 @@ type Msg
     | NowAtPosition Float
     | NowHasDuration Float
     | SeekToClicked Float
+    | FakeClicked
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -108,7 +113,7 @@ update msg model =
                 => Cmd.none
 
         NowAtPosition position ->
-            { model | currentEvent = Just "timeupdate", position = position }
+            { model | currentEvent = Just "timeupdate", position = position, w = model.w + 1 }
                 => Cmd.none
 
         NowHasDuration duration ->
@@ -150,6 +155,10 @@ update msg model =
         SeekToClicked position ->
             model
                 => pushVideoEvent (SeekTo position)
+
+        FakeClicked ->
+            { model | useFake = not model.useFake }
+                => pushVideoEvent (Replace)
 
 
 
@@ -204,18 +213,21 @@ mediaPlayerView model =
     <|
         column PlayerStyle
             [ spacing 5 ]
-            [ videoView
+            [ if model.useFake then
+                el DefaultStyle [] (videoView (model.w - 50))
+              else
+                videoView model.w
             , controlsView model
             ]
 
 
-videoView : Element Class variation Msg
-videoView =
+videoView : Int -> Element Class variation Msg
+videoView x =
     let
         attributes =
             List.concat
-                [ [ width <| px 305
-                  , height <| px 160
+                [ [ width <| px (305 - toFloat x)
+                  , height <| px (160 - toFloat x)
                   , id "media-video"
                   , attribute "src" "videos/big-buck-bunny_trailer.webm"
                   ]
@@ -311,7 +323,7 @@ buttonMsg buttonType =
             UnmuteClicked
 
         ReplayButton ->
-            RestartClicked
+            FakeClicked
 
 
 {-| This displays the last event that was handled and exists primarily so that
@@ -417,6 +429,7 @@ Add more cases if we want to tell the video player new things.
 -}
 type VideoEvent
     = Setup
+    | Replace
     | Play
     | Pause
     | Stop
@@ -485,6 +498,11 @@ encodeVideoEvent event =
             Encode.object
                 [ "kind" => Encode.string "seekto"
                 , "position" => Encode.float position
+                ]
+
+        Replace ->
+            Encode.object
+                [ "kind" => Encode.string "replace"
                 ]
 
 
