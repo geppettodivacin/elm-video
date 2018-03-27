@@ -65,7 +65,7 @@ view model =
     let
         viewPlayer index player =
             Element.map (VideoMsg index) <|
-                Player.view player
+                Player.view (Player.ratio16x9 Player.setWidth 1000) player
     in
         Element.layout stylesheet <|
             row DefaultStyle

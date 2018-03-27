@@ -1,4 +1,4 @@
-port module Player exposing (main, Model, Msg, init, update, view)
+port module Player exposing (main, Model, Msg, init, update, view, ratio16x9, ratio9x16, ratio4x3, setWidth, setHeight)
 
 import Debug
 import DOM as Dom
@@ -192,35 +192,46 @@ mainElement model =
         [ padding 8 ]
         [ h1 HeaderStyle [ paddingXY 0 10 ] <|
             text "Sample Media Player using Elm Style Elements"
-        , view model
+        , view (ratio16x9 setWidth 300) model
         , currentEvent model.currentEvent
         ]
 
 
-view : Model -> Element Class variation Msg
-view model =
-    el PlayerStyle
-        [ paddingTop 16
-        , paddingBottom 8
-        , paddingLeft 16
-        , paddingRight 16
-        , alignLeft
-        ]
-    <|
-        column PlayerStyle
-            [ spacing 5 ]
-            [ video model
-            , controls model
+view : Size -> Model -> Element Class variation Msg
+view size model =
+    let
+        correctedSize =
+            adjustSize 0 30 size
+
+        videoSize =
+            adjustSize (-37) (-48) correctedSize
+    in
+        el PlayerStyle
+            [ paddingTop 16
+            , paddingBottom 8
+            , paddingLeft 16
+            , paddingRight 16
+            , width (px correctedSize.width)
+            , height (px correctedSize.height)
+            , clip
+            , alignLeft
             ]
+        <|
+            column PlayerStyle
+                [ spacing 5
+                ]
+                [ video videoSize model
+                , controls model
+                ]
 
 
-video : Model -> Element Class variation Msg
-video model =
+video : Size -> Model -> Element Class variation Msg
+video size model =
     let
         attributes =
             List.concat
-                [ [ width <| px 305
-                  , height <| px 160
+                [ [ width (px size.width)
+                  , height (px size.height)
                   , id model.id
                   , attribute "src" "videos/big-buck-bunny_trailer.webm"
                   ]
@@ -539,3 +550,41 @@ infixl 0 =>
 (=>) : a -> b -> ( a, b )
 (=>) =
     (,)
+
+
+{-| A size type and some helpers to generate the correct aspect ratio video.
+-}
+type alias Size =
+    { width : Float
+    , height : Float
+    }
+
+
+adjustSize : Float -> Float -> Size -> Size
+adjustSize width height size =
+    { width = size.width + width, height = size.height + height }
+
+
+setWidth : Float -> Float -> Float -> Size
+setWidth widthScale heightScale maxWidth =
+    { width = maxWidth, height = maxWidth * heightScale / widthScale }
+
+
+setHeight : Float -> Float -> Float -> Size
+setHeight widthScale heightScale maxHeight =
+    { width = maxHeight * widthScale / heightScale, height = maxHeight }
+
+
+ratio16x9 : (Float -> Float -> Float -> Size) -> Float -> Size
+ratio16x9 makeRatio =
+    makeRatio 16 9
+
+
+ratio9x16 : (Float -> Float -> Float -> Size) -> Float -> Size
+ratio9x16 makeRatio =
+    makeRatio 9 16
+
+
+ratio4x3 : (Float -> Float -> Float -> Size) -> Float -> Size
+ratio4x3 makeRatio =
+    makeRatio 4 3
