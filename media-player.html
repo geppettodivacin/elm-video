@@ -56,6 +56,14 @@
             video.currentTime = event.position;
             console.log("Seeked to " + event.position);
             break;
+          case "replace":
+            var paused = video.paused;
+            requestAnimationFrame(() => {
+              var newVideo = document.getElementById("media-video");
+              newVideo.parentNode.replaceChild(video, newVideo);
+              if (!paused) video.play();
+            });
+            break;
           default:
             console.log("Unexpected event:");
             console.log(event);

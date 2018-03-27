@@ -29,6 +29,8 @@ type alias Model =
     , volume : Float -- Percentage from 0 - 1
     , position : Float -- In seconds
     , duration : Float -- In seconds
+    , useFake : Bool
+    , w : Int
     }
 
 
@@ -53,6 +55,8 @@ init =
     , volume = 1
     , position = 0
     , duration = 0
+    , useFake = False
+    , w = 50
     }
         => pushVideoEvent Setup
 
@@ -88,6 +92,7 @@ type Msg
     | NowAtPosition Float
     | NowHasDuration Float
     | SeekToClicked Float
+    | FakeClicked
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -106,7 +111,7 @@ update msg model =
                 => Cmd.none
 
         NowAtPosition position ->
-            { model | currentEvent = Just "timeupdate", position = position }
+            { model | currentEvent = Just "timeupdate", position = position, w = model.w + 1 }
                 => Cmd.none
 
         NowHasDuration duration ->
@@ -149,94 +154,9 @@ update msg model =
             model
                 => pushVideoEvent (SeekTo position)
 
-
-
--- PORTS
-
-
-{-| This is how we send the video player messages. We are sending out a JSON
-object with the command, where `kind` is always a string with the operation
-name. Different commands may require additional information to be executed.
-These objects should never be constructed by hand but should instead be sent
-via the `pushVideoEvent` function.
--}
-port videoEventStream : Value -> Cmd msg
-
-
-{-| These are all the kinds of messages that can be sent to the video player.
-Add more cases if we want to tell the video player new things.
--}
-type VideoEvent
-    = Setup
-    | Play
-    | Pause
-    | Stop
-    | Restart
-    | Mute
-    | Unmute
-    | VolumeDown
-    | VolumeUp
-    | SeekTo Float
-
-
-{-| This is the function we should use to send messages to the video player. It
-takes care of encoding and pushing through the port.
--}
-pushVideoEvent : VideoEvent -> Cmd msg
-pushVideoEvent event =
-    event
-        |> encodeVideoEvent
-        |> videoEventStream
-
-
-{-| Encodes a VideoEvent as a simple JSON value. As new events are added, also
-add a case for the encoder. Elm will throw a compile-time error if you forget,
-so don't worry about forgetting.
--}
-encodeVideoEvent : VideoEvent -> Value
-encodeVideoEvent event =
-    case event of
-        Setup ->
-            Encode.object
-                [ "kind" => Encode.string "setup" ]
-
-        Play ->
-            Encode.object
-                [ "kind" => Encode.string "play" ]
-
-        Pause ->
-            Encode.object
-                [ "kind" => Encode.string "pause" ]
-
-        Stop ->
-            Encode.object
-                [ "kind" => Encode.string "stop" ]
-
-        Restart ->
-            Encode.object
-                [ "kind" => Encode.string "restart" ]
-
-        Mute ->
-            Encode.object
-                [ "kind" => Encode.string "mute" ]
-
-        Unmute ->
-            Encode.object
-                [ "kind" => Encode.string "unmute" ]
-
-        VolumeDown ->
-            Encode.object
-                [ "kind" => Encode.string "volumedown" ]
-
-        VolumeUp ->
-            Encode.object
-                [ "kind" => Encode.string "volumeup" ]
-
-        SeekTo position ->
-            Encode.object
-                [ "kind" => Encode.string "seekto"
-                , "position" => Encode.float position
-                ]
+        FakeClicked ->
+            { model | useFake = not model.useFake }
+                => pushVideoEvent (Replace)
 
 
 
@@ -264,12 +184,13 @@ view model =
     body []
         [ h1 [] [ text "Sample Media Player using HTML5's Media API" ]
         , div [ id "media-player" ]
-            [ video ([ id "media-video" ] ++ videoEvents)
-                [ source [ src "videos/big-buck-bunny_trailer.webm", type_ "video/mp4" ] []
-                ]
+            [ if model.useFake then
+                div [] [ videoPlayer (model.w + 50) ]
+              else
+                videoPlayer model.w
             , div [ id "media-controls" ]
                 [ progress [ id "progress-bar", Attr.max (toString model.duration), value (toString model.position), seekEvent model.duration ] [ text "played" ]
-                , button [ id "replay-button", class "replay", title "replay", onClick RestartClicked ] [ text "Replay" ]
+                , button [ id "replay-button", class "replay", title "replay", onClick FakeClicked ] [ text "Replay" ]
                 , playPauseButton model.playState
                 , button [ id "stop-button", class "stop", title "stop", onClick StopClicked ] [ text "Stop" ]
                 , button [ id "volume-inc-button", class "volume-plus", title "increase volume", onClick VolumeUpClicked ] [ text "Increase Volume" ]
@@ -278,6 +199,13 @@ view model =
                 ]
             ]
         , currentEventView model.currentEvent -- Added for debugging events.
+        ]
+
+
+videoPlayer : Int -> Html Msg
+videoPlayer w =
+    video ([ id "media-video", width w ] ++ videoEvents)
+        [ source [ src "videos/big-buck-bunny_trailer.webm", type_ "video/mp4" ] []
         ]
 
 
@@ -388,6 +316,101 @@ decodeSeek duration =
         Decode.map2 calcSeek
             (Dom.target Dom.offsetWidth)
             (Decode.field "offsetX" Decode.float)
+
+
+
+-- PORTS
+
+
+{-| This is how we send the video player messages. We are sending out a JSON
+object with the command, where `kind` is always a string with the operation
+name. Different commands may require additional information to be executed.
+These objects should never be constructed by hand but should instead be sent
+via the `pushVideoEvent` function.
+-}
+port videoEventStream : Value -> Cmd msg
+
+
+{-| These are all the kinds of messages that can be sent to the video player.
+Add more cases if we want to tell the video player new things.
+-}
+type VideoEvent
+    = Setup
+    | Replace
+    | Play
+    | Pause
+    | Stop
+    | Restart
+    | Mute
+    | Unmute
+    | VolumeDown
+    | VolumeUp
+    | SeekTo Float
+
+
+{-| This is the function we should use to send messages to the video player. It
+takes care of encoding and pushing through the port.
+-}
+pushVideoEvent : VideoEvent -> Cmd msg
+pushVideoEvent event =
+    event
+        |> encodeVideoEvent
+        |> videoEventStream
+
+
+{-| Encodes a VideoEvent as a simple JSON value. As new events are added, also
+add a case for the encoder. Elm will throw a compile-time error if you forget,
+so don't worry about forgetting.
+-}
+encodeVideoEvent : VideoEvent -> Value
+encodeVideoEvent event =
+    case event of
+        Setup ->
+            Encode.object
+                [ "kind" => Encode.string "setup" ]
+
+        Play ->
+            Encode.object
+                [ "kind" => Encode.string "play" ]
+
+        Pause ->
+            Encode.object
+                [ "kind" => Encode.string "pause" ]
+
+        Stop ->
+            Encode.object
+                [ "kind" => Encode.string "stop" ]
+
+        Restart ->
+            Encode.object
+                [ "kind" => Encode.string "restart" ]
+
+        Mute ->
+            Encode.object
+                [ "kind" => Encode.string "mute" ]
+
+        Unmute ->
+            Encode.object
+                [ "kind" => Encode.string "unmute" ]
+
+        VolumeDown ->
+            Encode.object
+                [ "kind" => Encode.string "volumedown" ]
+
+        VolumeUp ->
+            Encode.object
+                [ "kind" => Encode.string "volumeup" ]
+
+        SeekTo position ->
+            Encode.object
+                [ "kind" => Encode.string "seekto"
+                , "position" => Encode.float position
+                ]
+
+        Replace ->
+            Encode.object
+                [ "kind" => Encode.string "replace"
+                ]
 
 
 
