@@ -65,7 +65,9 @@ view model =
     let
         viewPlayer index player =
             Element.map (VideoMsg index) <|
-                Player.view (Player.ratio16x9 Player.setWidth 1000) player
+                Player.view "videos/big-buck-bunny_trailer.webm"
+                    (Player.ratio16x9 Player.setWidth 1000)
+                    player
     in
         Element.layout stylesheet <|
             row DefaultStyle

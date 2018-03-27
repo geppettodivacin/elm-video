@@ -192,13 +192,15 @@ mainElement model =
         [ padding 8 ]
         [ h1 HeaderStyle [ paddingXY 0 10 ] <|
             text "Sample Media Player using Elm Style Elements"
-        , view (ratio16x9 setWidth 300) model
+        , view "videos/big-buck-bunny_trailer.webm"
+            (ratio16x9 setWidth 300)
+            model
         , currentEvent model.currentEvent
         ]
 
 
-view : Size -> Model -> Element Class variation Msg
-view size model =
+view : String -> Size -> Model -> Element Class variation Msg
+view source size model =
     let
         correctedSize =
             adjustSize 0 30 size
@@ -220,20 +222,20 @@ view size model =
             column PlayerStyle
                 [ spacing 5
                 ]
-                [ video videoSize model
+                [ video source videoSize model
                 , controls model
                 ]
 
 
-video : Size -> Model -> Element Class variation Msg
-video size model =
+video : String -> Size -> Model -> Element Class variation Msg
+video source size model =
     let
         attributes =
             List.concat
                 [ [ width (px size.width)
                   , height (px size.height)
                   , id model.id
-                  , attribute "src" "videos/big-buck-bunny_trailer.webm"
+                  , attribute "src" source
                   ]
                 , videoEvents
                 ]
