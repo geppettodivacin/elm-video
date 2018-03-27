@@ -9,55 +9,55 @@
   <script>
     (function() {
       var app = Elm.Main.fullscreen();
-      var video = null;
+      var videos = {};
 
       app.ports.videoEventStream.subscribe(function(event) {
         switch(event.kind) {
           case "setup":
-            video = document.getElementById(event.id);
-            console.log(video);
-            video.volume = event.volume;
-            video.muted = event.muted;
-            video.currentTime = event.position;
-            if (!event.paused) video.play();
+            videos[event.id] = document.getElementById(event.id);
+            console.log(videos[event.id]);
+            videos[event.id].volume = event.volume;
+            videos[event.id].muted = event.muted;
+            videos[event.id].currentTime = event.position;
+            if (!event.paused) videos[event.id].play();
             break;
           case "pause":
-            video.pause();
+            videos[event.id].pause();
             console.log("Pausing");
             break;
           case "play":
-            video.play();
+            videos[event.id].play();
             console.log("Playing");
             break;
           case "stop":
-            video.pause();
-            video.currentTime = 0;
+            videos[event.id].pause();
+            videos[event.id].currentTime = 0;
             console.log("Stopping");
             break;
           case "restart":
-            video.currentTime = 0;
+            videos[event.id].currentTime = 0;
             console.log("Restarting");
             break;
           case "volumedown":
-            var newVolume = Math.max(video.volume - 0.1, 0.0).toFixed(1);
-            video.volume = newVolume;
-            console.log("Volume Down, at " + video.volume);
+            var newVolume = Math.max(videos[event.id].volume - 0.1, 0.0).toFixed(1);
+            videos[event.id].volume = newVolume;
+            console.log("Volume Down, at " + videos[event.id].volume);
             break;
           case "volumeup":
-            var newVolume = Math.min(video.volume + 0.1, 1.0).toFixed(1);
-            video.volume = newVolume;
-            console.log("Volume Up, at " + video.volume);
+            var newVolume = Math.min(videos[event.id].volume + 0.1, 1.0).toFixed(1);
+            videos[event.id].volume = newVolume;
+            console.log("Volume Up, at " + videos[event.id].volume);
             break;
           case "mute":
-            video.muted = true;
+            videos[event.id].muted = true;
             console.log("Mute");
             break;
           case "unmute":
-            video.muted = false;
+            videos[event.id].muted = false;
             console.log("Unmute");
             break;
           case "seekto":
-            video.currentTime = event.position;
+            videos[event.id].currentTime = event.position;
             console.log("Seeked to " + event.position);
             break;
           default:

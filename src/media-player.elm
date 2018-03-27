@@ -122,39 +122,39 @@ update msg model =
 
         PlayClicked ->
             model
-                => pushVideoEvent Play
+                => pushVideoEvent (Play model.id)
 
         PauseClicked ->
             model
-                => pushVideoEvent Pause
+                => pushVideoEvent (Pause model.id)
 
         StopClicked ->
             model
-                => pushVideoEvent Stop
+                => pushVideoEvent (Stop model.id)
 
         RestartClicked ->
             model
-                => pushVideoEvent Restart
+                => pushVideoEvent (Restart model.id)
 
         MuteClicked ->
             model
-                => pushVideoEvent Mute
+                => pushVideoEvent (Mute model.id)
 
         UnmuteClicked ->
             model
-                => pushVideoEvent Unmute
+                => pushVideoEvent (Unmute model.id)
 
         VolumeDownClicked ->
             model
-                => pushVideoEvent VolumeDown
+                => pushVideoEvent (VolumeDown model.id)
 
         VolumeUpClicked ->
             model
-                => pushVideoEvent VolumeUp
+                => pushVideoEvent (VolumeUp model.id)
 
         SeekToClicked position ->
             model
-                => pushVideoEvent (SeekTo position)
+                => pushVideoEvent (SeekTo model.id position)
 
 
 
@@ -422,15 +422,15 @@ Add more cases if we want to tell the video player new things.
 -}
 type VideoEvent
     = Setup Model
-    | Play
-    | Pause
-    | Stop
-    | Restart
-    | Mute
-    | Unmute
-    | VolumeDown
-    | VolumeUp
-    | SeekTo Float
+    | Play String
+    | Pause String
+    | Stop String
+    | Restart String
+    | Mute String
+    | Unmute String
+    | VolumeDown String
+    | VolumeUp String
+    | SeekTo String Float
 
 
 {-| This is the function we should use to send messages to the video player. It
@@ -455,46 +455,63 @@ encodeVideoEvent event =
                 [ "kind" => Encode.string "setup"
                 , "id" => Encode.string model.id
                 , "volume" => Encode.float model.volume
-                , "position" => Encode.float model.position
                 , "muted" => Encode.bool (model.muteState == MutedState)
+                , "position" => Encode.float model.position
                 , "paused" => Encode.bool (model.playState == PausedState)
                 ]
 
-        Play ->
+        Play id ->
             Encode.object
-                [ "kind" => Encode.string "play" ]
+                [ "kind" => Encode.string "play"
+                , "id" => Encode.string id
+                ]
 
-        Pause ->
+        Pause id ->
             Encode.object
-                [ "kind" => Encode.string "pause" ]
+                [ "kind" => Encode.string "pause"
+                , "id" => Encode.string id
+                ]
 
-        Stop ->
+        Stop id ->
             Encode.object
-                [ "kind" => Encode.string "stop" ]
+                [ "kind" => Encode.string "stop"
+                , "id" => Encode.string id
+                ]
 
-        Restart ->
+        Restart id ->
             Encode.object
-                [ "kind" => Encode.string "restart" ]
+                [ "kind" => Encode.string "restart"
+                , "id" => Encode.string id
+                ]
 
-        Mute ->
+        Mute id ->
             Encode.object
-                [ "kind" => Encode.string "mute" ]
+                [ "kind" => Encode.string "mute"
+                , "id" => Encode.string id
+                ]
 
-        Unmute ->
+        Unmute id ->
             Encode.object
-                [ "kind" => Encode.string "unmute" ]
+                [ "kind" => Encode.string "unmute"
+                , "id" => Encode.string id
+                ]
 
-        VolumeDown ->
+        VolumeDown id ->
             Encode.object
-                [ "kind" => Encode.string "volumedown" ]
+                [ "kind" => Encode.string "volumedown"
+                , "id" => Encode.string id
+                ]
 
-        VolumeUp ->
+        VolumeUp id ->
             Encode.object
-                [ "kind" => Encode.string "volumeup" ]
+                [ "kind" => Encode.string "volumeup"
+                , "id" => Encode.string id
+                ]
 
-        SeekTo position ->
+        SeekTo id position ->
             Encode.object
                 [ "kind" => Encode.string "seekto"
+                , "id" => Encode.string id
                 , "position" => Encode.float position
                 ]
 
