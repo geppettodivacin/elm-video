@@ -13,7 +13,7 @@ import StyleSheet exposing (..)
 
 main =
     Html.program
-        { init = init
+        { init = init "media-video"
         , view = view
         , update = update
         , subscriptions = subscriptions
@@ -31,6 +31,7 @@ type alias Model =
     , volume : Float -- Percentage from 0 - 1
     , position : Float -- In seconds
     , duration : Float -- In seconds
+    , id : String
     }
 
 
@@ -47,16 +48,20 @@ type MuteState
 {-| This is the initial state and also the initialization command sent to
 JavaScript to setup the video player.
 -}
-init : ( Model, Cmd Msg )
-init =
-    { currentEvent = Nothing
-    , playState = PausedState
-    , muteState = UnmutedState
-    , volume = 1
-    , position = 0
-    , duration = 0
-    }
-        => pushVideoEvent Setup
+init : String -> ( Model, Cmd Msg )
+init id =
+    let
+        model =
+            { currentEvent = Nothing
+            , playState = PausedState
+            , muteState = UnmutedState
+            , volume = 1
+            , position = 0
+            , duration = 0
+            , id = id
+            }
+    in
+        model => pushVideoEvent (Setup model)
 
 
 
@@ -416,7 +421,7 @@ port videoEventStream : Value -> Cmd msg
 Add more cases if we want to tell the video player new things.
 -}
 type VideoEvent
-    = Setup
+    = Setup Model
     | Play
     | Pause
     | Stop
@@ -445,9 +450,15 @@ so don't worry about forgetting.
 encodeVideoEvent : VideoEvent -> Value
 encodeVideoEvent event =
     case event of
-        Setup ->
+        Setup model ->
             Encode.object
-                [ "kind" => Encode.string "setup" ]
+                [ "kind" => Encode.string "setup"
+                , "id" => Encode.string model.id
+                , "volume" => Encode.float model.volume
+                , "position" => Encode.float model.position
+                , "muted" => Encode.bool (model.muteState == MutedState)
+                , "paused" => Encode.bool (model.playState == PausedState)
+                ]
 
         Play ->
             Encode.object

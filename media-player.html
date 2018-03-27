@@ -14,8 +14,12 @@
       app.ports.videoEventStream.subscribe(function(event) {
         switch(event.kind) {
           case "setup":
-            video = document.getElementById("media-video");
+            video = document.getElementById(event.id);
             console.log(video);
+            video.volume = event.volume;
+            video.muted = event.muted;
+            video.currentTime = event.position;
+            if (!event.paused) video.play();
             break;
           case "pause":
             video.pause();
