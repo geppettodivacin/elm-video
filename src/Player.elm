@@ -1,4 +1,4 @@
-port module Player exposing (mediaPlayerView, init, main, Model, update, Msg)
+port module Player exposing (main, Model, Msg, init, update, view)
 
 import Debug
 import DOM as Dom
@@ -14,7 +14,7 @@ import StyleSheet exposing (..)
 main =
     Html.program
         { init = init "media-video"
-        , view = view
+        , view = viewMain
         , update = update
         , subscriptions = subscriptions
         }
@@ -181,24 +181,24 @@ have a single place to change any of our layout. The primary disadvantage is a
 little more visual clutter here, and possibly some slowdown in rendering (since
 the generated HTML is a lot busier than using the standard `Html` library).
 -}
-view : Model -> Html Msg
-view model =
-    Element.layout stylesheet <| viewMain model
-
-
-viewMain : Model -> Element Class variation Msg
+viewMain : Model -> Html Msg
 viewMain model =
+    Element.layout stylesheet <| mainElement model
+
+
+mainElement : Model -> Element Class variation Msg
+mainElement model =
     column BodyStyle
         [ padding 8 ]
         [ h1 HeaderStyle [ paddingXY 0 10 ] <|
             text "Sample Media Player using Elm Style Elements"
-        , mediaPlayerView model
-        , currentEventView model.currentEvent
+        , view model
+        , currentEvent model.currentEvent
         ]
 
 
-mediaPlayerView : Model -> Element Class variation Msg
-mediaPlayerView model =
+view : Model -> Element Class variation Msg
+view model =
     el PlayerStyle
         [ paddingTop 16
         , paddingBottom 8
@@ -209,13 +209,13 @@ mediaPlayerView model =
     <|
         column PlayerStyle
             [ spacing 5 ]
-            [ videoView model
-            , controlsView model
+            [ video model
+            , controls model
             ]
 
 
-videoView : Model -> Element Class variation Msg
-videoView model =
+video : Model -> Element Class variation Msg
+video model =
     let
         attributes =
             List.concat
@@ -231,8 +231,8 @@ videoView model =
             el VideoStyle attributes empty
 
 
-controlsView : Model -> Element Class variation Msg
-controlsView model =
+controls : Model -> Element Class variation Msg
+controls model =
     let
         maxValue : Float -> Attribute variation Msg
         maxValue value =
@@ -251,37 +251,37 @@ controlsView model =
                     , seekEvent model.duration
                     ]
                     empty
-            , buttonView ReplayButton "Replay"
-            , playPauseButtonView model.playState
-            , buttonView StopButton "Stop"
-            , buttonView VolumePlusButton "+"
-            , buttonView VolumeMinusButton "-"
-            , muteButtonView model.muteState
+            , playerButton ReplayButton "Replay"
+            , playPauseButton model.playState
+            , playerButton StopButton "Stop"
+            , playerButton VolumePlusButton "+"
+            , playerButton VolumeMinusButton "-"
+            , muteButton model.muteState
             ]
 
 
-playPauseButtonView : PlayState -> Element Class variation Msg
-playPauseButtonView state =
+playPauseButton : PlayState -> Element Class variation Msg
+playPauseButton state =
     case state of
         PlayingState ->
-            buttonView PauseButton "Pause"
+            playerButton PauseButton "Pause"
 
         PausedState ->
-            buttonView PlayButton "Play"
+            playerButton PlayButton "Play"
 
 
-muteButtonView : MuteState -> Element Class variation Msg
-muteButtonView state =
+muteButton : MuteState -> Element Class variation Msg
+muteButton state =
     case state of
         MutedState ->
-            buttonView UnmuteButton "Unmute"
+            playerButton UnmuteButton "Unmute"
 
         UnmutedState ->
-            buttonView MuteButton "Mute"
+            playerButton MuteButton "Mute"
 
 
-buttonView : ButtonType -> String -> Element Class variation Msg
-buttonView buttonType backupText =
+playerButton : ButtonType -> String -> Element Class variation Msg
+playerButton buttonType backupText =
     button (ButtonStyle buttonType)
         [ width (px 16)
         , height (px 16)
@@ -322,8 +322,8 @@ buttonMsg buttonType =
 {-| This displays the last event that was handled and exists primarily so that
 I could see real-time what was being handled and what wasn't.
 -}
-currentEventView : Maybe String -> Element style variation msg
-currentEventView maybeEvent =
+currentEvent : Maybe String -> Element style variation msg
+currentEvent maybeEvent =
     Element.whenJust maybeEvent
         (\event -> text <| "Current event: " ++ event)
 
