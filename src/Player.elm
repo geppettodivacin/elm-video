@@ -204,9 +204,6 @@ view source size model =
     let
         correctedSize =
             adjustSize 0 30 size
-
-        videoSize =
-            adjustSize (-37) (-48) correctedSize
     in
         el PlayerStyle
             [ paddingTop 16
@@ -221,19 +218,21 @@ view source size model =
         <|
             column PlayerStyle
                 [ spacing 5
+                , height fill
+                , width fill
                 ]
-                [ video source videoSize model
+                [ video source model
                 , controls model
                 ]
 
 
-video : String -> Size -> Model -> Element Class variation Msg
-video source size model =
+video : String -> Model -> Element Class variation Msg
+video source model =
     let
         attributes =
             List.concat
-                [ [ width (px size.width)
-                  , height (px size.height)
+                [ [ width fill
+                  , height fill
                   , id model.id
                   , attribute "src" source
                   ]
@@ -256,7 +255,9 @@ controls model =
             attribute "value" <| toString value
     in
         row DefaultStyle
-            [ spacing 6 ]
+            [ spacing 6
+            , height (px 16)
+            ]
             [ node "progress" <|
                 el DefaultStyle
                     [ maxValue model.duration
