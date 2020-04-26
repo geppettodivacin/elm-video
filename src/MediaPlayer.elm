@@ -1,16 +1,17 @@
-port module Main exposing (..)
+port module MediaPlayer exposing (..)
 
+import Browser
 import Debug
-import DOM as Dom
 import Html exposing (..)
-import Html.Events exposing (..)
 import Html.Attributes as Attr exposing (..)
-import Json.Encode as Encode exposing (Value)
+import DOM as Dom
+import Html.Events exposing (..)
 import Json.Decode as Decode
+import Json.Encode as Encode exposing (Value)
 
 
 main =
-    Html.program
+    Browser.element
         { init = init
         , view = view
         , update = update
@@ -45,16 +46,17 @@ type MuteState
 {-| This is the initial state and also the initialization command sent to
 JavaScript to setup the video player.
 -}
-init : ( Model, Cmd Msg )
-init =
-    { currentEvent = Nothing
-    , playState = PausedState
-    , muteState = UnmutedState
-    , volume = 1
-    , position = 0
-    , duration = 0
-    }
-        => pushVideoEvent Setup
+init : () -> ( Model, Cmd Msg )
+init _ =
+    ( { currentEvent = Nothing
+      , playState = PausedState
+      , muteState = UnmutedState
+      , volume = 1
+      , position = 0
+      , duration = 0
+      }
+    , pushVideoEvent Setup
+    )
 
 
 
@@ -94,60 +96,72 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         NowPlaying ->
-            { model | currentEvent = Just "playing", playState = PlayingState }
-                => Cmd.none
+            ( { model | currentEvent = Just "playing", playState = PlayingState }
+            , Cmd.none
+            )
 
         NowPaused ->
-            { model | currentEvent = Just "paused", playState = PausedState }
-                => Cmd.none
+            ( { model | currentEvent = Just "paused", playState = PausedState }
+            , Cmd.none
+            )
 
         NowAtVolume volume muteState ->
-            { model | currentEvent = Just "volumechange", volume = volume, muteState = muteState }
-                => Cmd.none
+            ( { model | currentEvent = Just "volumechange", volume = volume, muteState = muteState }
+            , Cmd.none
+            )
 
         NowAtPosition position ->
-            { model | currentEvent = Just "timeupdate", position = position }
-                => Cmd.none
+            ( { model | currentEvent = Just "timeupdate", position = position }
+            , Cmd.none
+            )
 
         NowHasDuration duration ->
-            { model | currentEvent = Just "durationchange", duration = duration }
-                => Cmd.none
+            ( { model | currentEvent = Just "durationchange", duration = duration }
+            , Cmd.none
+            )
 
         PlayClicked ->
-            model
-                => pushVideoEvent Play
+            ( model
+            , pushVideoEvent Play
+            )
 
         PauseClicked ->
-            model
-                => pushVideoEvent Pause
+            ( model
+            , pushVideoEvent Pause
+            )
 
         StopClicked ->
-            model
-                => pushVideoEvent Stop
+            ( model
+            , pushVideoEvent Stop
+            )
 
         RestartClicked ->
-            model
-                => pushVideoEvent Restart
+            ( model
+            , pushVideoEvent Restart
+            )
 
         MuteClicked ->
-            model
-                => pushVideoEvent Mute
+            ( model
+            , pushVideoEvent Mute
+            )
 
         UnmuteClicked ->
-            model
-                => pushVideoEvent Unmute
+            ( model
+            , pushVideoEvent Unmute
+            )
 
         VolumeDownClicked ->
-            model
-                => pushVideoEvent VolumeDown
+            ( model
+            , pushVideoEvent VolumeDown
+            )
 
         VolumeUpClicked ->
-            model
-                => pushVideoEvent VolumeUp
-
+            ( model
+            , pushVideoEvent VolumeUp)
         SeekToClicked position ->
-            model
-                => pushVideoEvent (SeekTo position)
+            (model
+            , pushVideoEvent (SeekTo position)
+            )
 
 
 
@@ -172,14 +186,15 @@ and it automatically updates as we change the model.
 -}
 view : Model -> Html Msg
 view model =
-    body []
+    div []
         [ h1 [] [ text "Sample Media Player using HTML5's Media API" ]
         , div [ id "media-player" ]
             [ video ([ id "media-video" ] ++ videoEvents)
                 [ source [ src "videos/big-buck-bunny_trailer.webm", type_ "video/mp4" ] []
                 ]
             , div [ id "media-controls" ]
-                [ progress [ id "progress-bar", Attr.max (toString model.duration), value (toString model.position), seekEvent model.duration ] [ text "played" ]
+                [ progress [ id "progress-bar", 
+                    Attr.max (String.fromFloat model.duration), value (String.fromFloat model.position), seekEvent model.duration ] [ text "played" ]
                 , button [ id "replay-button", class "replay", title "replay", onClick RestartClicked ] [ text "Replay" ]
                 , playPauseButton model.playState
                 , button [ id "stop-button", class "stop", title "stop", onClick StopClicked ] [ text "Stop" ]
@@ -267,13 +282,14 @@ decodeVolume =
         toMuteState muted =
             if muted then
                 MutedState
+
             else
                 UnmutedState
     in
-        Dom.target <|
-            Decode.map2 NowAtVolume
-                (Decode.field "volume" Decode.float)
-                (Decode.map toMuteState <| Decode.field "muted" Decode.bool)
+    Dom.target <|
+        Decode.map2 NowAtVolume
+            (Decode.field "volume" Decode.float)
+            (Decode.map toMuteState <| Decode.field "muted" Decode.bool)
 
 
 decodePosition : Decode.Decoder Msg
@@ -296,9 +312,9 @@ decodeSeek duration =
         calcSeek width offset =
             SeekToClicked <| (offset / width) * duration
     in
-        Decode.map2 calcSeek
-            (Dom.target Dom.offsetWidth)
-            (Decode.field "offsetX" Decode.float)
+    Decode.map2 calcSeek
+        (Dom.target Dom.offsetWidth)
+        (Decode.field "offsetX" Decode.float)
 
 
 
@@ -349,67 +365,44 @@ encodeVideoEvent event =
     case event of
         Setup ->
             Encode.object
-                [ "kind" => Encode.string "setup" ]
+                [( "kind", Encode.string "setup" )]
 
         Play ->
             Encode.object
-                [ "kind" => Encode.string "play" ]
+                [( "kind", Encode.string "play" )]
 
         Pause ->
             Encode.object
-                [ "kind" => Encode.string "pause" ]
+                [( "kind", Encode.string "pause" )]
 
         Stop ->
             Encode.object
-                [ "kind" => Encode.string "stop" ]
+                [ ("kind", Encode.string "stop" )]
 
         Restart ->
             Encode.object
-                [ "kind" => Encode.string "restart" ]
+                [( "kind", Encode.string "restart" )]
 
         Mute ->
             Encode.object
-                [ "kind" => Encode.string "mute" ]
+                [( "kind", Encode.string "mute" )]
 
         Unmute ->
             Encode.object
-                [ "kind" => Encode.string "unmute" ]
+                [ ("kind", Encode.string "unmute" )]
 
         VolumeDown ->
             Encode.object
-                [ "kind" => Encode.string "volumedown" ]
+                [( "kind", Encode.string "volumedown" )]
 
         VolumeUp ->
             Encode.object
-                [ "kind" => Encode.string "volumeup" ]
+                [ ("kind", Encode.string "volumeup" )]
 
         SeekTo position ->
             Encode.object
-                [ "kind" => Encode.string "seekto"
-                , "position" => Encode.float position
+                [( "kind"
+                , Encode.string "seekto")
+                , ("position"
+                , Encode.float position)
                 ]
-
-
-
--- UTILITIES
-
-
-{-| This is just a useful alias for making tuples in places where commas have a
-different meaning. It's super useful in lists for this reason.
-
-As an example:
-
-    [ ( "Steelers", 27 ), ( "Ravens", 0 ) ]
-
-could be written:
-
-    [ "Steelers" => 27, "Ravens" => 0 ]
-
-This is often easier to read because you don't have to keep track of so many
-commas and parentheses.
-
--}
-infixl 0 =>
-(=>) : a -> b -> ( a, b )
-(=>) =
-    (,)
