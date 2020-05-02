@@ -1,10 +1,10 @@
 port module MediaPlayer exposing (..)
 
 import Browser
+import DOM as Dom
 import Debug
 import Html exposing (..)
 import Html.Attributes as Attr exposing (..)
-import DOM as Dom
 import Html.Events exposing (..)
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
@@ -157,9 +157,11 @@ update msg model =
 
         VolumeUpClicked ->
             ( model
-            , pushVideoEvent VolumeUp)
+            , pushVideoEvent VolumeUp
+            )
+
         SeekToClicked position ->
-            (model
+            ( model
             , pushVideoEvent (SeekTo position)
             )
 
@@ -193,8 +195,13 @@ view model =
                 [ source [ src "videos/big-buck-bunny_trailer.webm", type_ "video/mp4" ] []
                 ]
             , div [ id "media-controls" ]
-                [ progress [ id "progress-bar", 
-                    Attr.max (String.fromFloat model.duration), value (String.fromFloat model.position), seekEvent model.duration ] [ text "played" ]
+                [ progress
+                    [ id "progress-bar"
+                    , Attr.max (String.fromFloat model.duration)
+                    , value (String.fromFloat model.position)
+                    , seekEvent model.duration
+                    ]
+                    [ text "played" ]
                 , button [ id "replay-button", class "replay", title "replay", onClick RestartClicked ] [ text "Replay" ]
                 , playPauseButton model.playState
                 , button [ id "stop-button", class "stop", title "stop", onClick StopClicked ] [ text "Stop" ]
@@ -365,44 +372,42 @@ encodeVideoEvent event =
     case event of
         Setup ->
             Encode.object
-                [( "kind", Encode.string "setup" )]
+                [ ( "kind", Encode.string "setup" ) ]
 
         Play ->
             Encode.object
-                [( "kind", Encode.string "play" )]
+                [ ( "kind", Encode.string "play" ) ]
 
         Pause ->
             Encode.object
-                [( "kind", Encode.string "pause" )]
+                [ ( "kind", Encode.string "pause" ) ]
 
         Stop ->
             Encode.object
-                [ ("kind", Encode.string "stop" )]
+                [ ( "kind", Encode.string "stop" ) ]
 
         Restart ->
             Encode.object
-                [( "kind", Encode.string "restart" )]
+                [ ( "kind", Encode.string "restart" ) ]
 
         Mute ->
             Encode.object
-                [( "kind", Encode.string "mute" )]
+                [ ( "kind", Encode.string "mute" ) ]
 
         Unmute ->
             Encode.object
-                [ ("kind", Encode.string "unmute" )]
+                [ ( "kind", Encode.string "unmute" ) ]
 
         VolumeDown ->
             Encode.object
-                [( "kind", Encode.string "volumedown" )]
+                [ ( "kind", Encode.string "volumedown" ) ]
 
         VolumeUp ->
             Encode.object
-                [ ("kind", Encode.string "volumeup" )]
+                [ ( "kind", Encode.string "volumeup" ) ]
 
         SeekTo position ->
             Encode.object
-                [( "kind"
-                , Encode.string "seekto")
-                , ("position"
-                , Encode.float position)
+                [ ( "kind", Encode.string "seekto" )
+                , ( "position", Encode.float position )
                 ]
