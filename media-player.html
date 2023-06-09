@@ -1,18 +1,21 @@
 <html lang='en'>
-  <head>
-    <meta charset='utf-8' />
-    <title>Sample Media Player using HTML5's Media API</title>
-    <link href='media-player.css' rel='stylesheet' />
-  </head>
+
+<head>
+  <meta charset='utf-8' />
+  <title>Sample Media Player using HTML5's Media API</title>
+  <link href='media-player.css' rel='stylesheet' />
+</head>
+
+<body>
   <div id="main"></div>
   <script src="elm.js"></script>
   <script>
-    (function() {
-      var app = Elm.Main.fullscreen();
+    (function () {
+      var app = Elm.MediaPlayer.init({ node: document.getElementById("main") });
       var video = null;
 
-      app.ports.videoEventStream.subscribe(function(event) {
-        switch(event.kind) {
+      app.ports.videoEventStream.subscribe(function (event) {
+        switch (event.kind) {
           case "setup":
             video = document.getElementById("media-video");
             console.log(video);
@@ -63,4 +66,6 @@
       });
     })();
   </script>
+</body>
+
 </html>
